@@ -284,6 +284,20 @@ function initEasyFlow() {
   });
 
   // Step 2: AI Provider selection
+  async function checkInlineKey() {
+    const settingsRes = await sendBG('getSettings').catch(() => null);
+    const keys = settingsRes?.settings?.apiKeys || {};
+    const key = keys[easyAIProvider];
+    const keyBox = $('easyAiKeyInline');
+    const keyInput = $('easyInlineKeyInput');
+    if (!key && keyBox) {
+      keyBox.style.display = 'flex';
+      if (keyInput) keyInput.placeholder = `Paste ${easyAIProvider.toUpperCase()} key (e.g. AQ... or AIza...)`;
+    } else if (keyBox) {
+      keyBox.style.display = 'none';
+    }
+  }
+
   $$('.easy-provider-pill').forEach((pill) => {
     pill.addEventListener('click', () => {
       $$('.easy-provider-pill').forEach((p) => p.classList.remove('active'));
@@ -291,8 +305,30 @@ function initEasyFlow() {
       easyAIProvider = pill.dataset.provider;
       const tag = $('easyAiProviderTag');
       if (tag) tag.textContent = pill.textContent;
+      checkInlineKey();
     });
   });
+
+  // Save inline key button
+  $('easySaveInlineKeyBtn')?.addEventListener('click', async () => {
+    const val = $('easyInlineKeyInput')?.value.trim();
+    if (!val) {
+      showToast('Please enter an API key!', 'info');
+      return;
+    }
+    const settingsRes = await sendBG('getSettings').catch(() => null);
+    const current = settingsRes?.settings || {};
+    const apiKeys = current.apiKeys || {};
+    apiKeys[easyAIProvider] = val;
+
+    await sendBG('saveSettings', { settings: { ...current, apiKeys } });
+    showToast(`${easyAIProvider.toUpperCase()} key saved successfully!`, 'success');
+    if ($('easyAiKeyInline')) $('easyAiKeyInline').style.display = 'none';
+    const fieldId = easyAIProvider === 'chatgpt' ? 'keyChatGPT' : easyAIProvider === 'claude' ? 'keyClaude' : 'keyGemini';
+    if ($(fieldId)) $(fieldId).value = val;
+  });
+
+  checkInlineKey();
 
   // Step 2: Ask AI to solve / fix code
   $('easyAiSolveBtn')?.addEventListener('click', async () => {

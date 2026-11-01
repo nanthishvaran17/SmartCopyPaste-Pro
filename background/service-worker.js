@@ -31,7 +31,7 @@ const DEFAULT_SETTINGS = {
   aiProvider: 'gemini',
   chatgptModel: 'gpt-4o-mini',
   claudeModel: 'claude-3-5-haiku-20241022',
-  geminiModel: 'gemini-1.5-flash'
+  geminiModel: 'gemini-2.5-flash'
 };
 
 const DEFAULT_STATS = {
@@ -585,26 +585,40 @@ async function handleAICall(provider, prompt, systemPrompt = '') {
     if (!key) {
       return { 
         success: false, 
-        error: 'Google Gemini API key missing. Configure it in Extension Settings, or click "Open Web" to use Gemini directly.' 
+        error: 'Google Gemini API key missing. Paste your Gemini key in Step 2 or Settings.' 
       };
     }
-    const model = settings.geminiModel || 'gemini-1.5-flash';
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+    const candidateModels = [
+      settings.geminiModel || 'gemini-2.5-flash',
+      'gemini-flash-latest',
+      'gemini-2.5-pro'
+    ];
     const fullPrompt = systemPrompt ? `${systemPrompt}\n\nTask:\n${prompt}` : prompt;
-    
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: fullPrompt }] }]
-      })
-    });
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.error?.message || `Gemini error: HTTP ${response.status}`);
+    let lastError = null;
+
+    for (const model of candidateModels) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: fullPrompt }] }]
+          })
+        });
+        const data = await response.json();
+        if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
+          const reply = data.candidates[0].content.parts[0].text;
+          return { success: true, reply, provider: 'gemini', model };
+        }
+        if (response.status !== 404) {
+          throw new Error(data.error?.message || `Gemini error: HTTP ${response.status}`);
+        }
+      } catch (err) {
+        lastError = err;
+      }
     }
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    return { success: true, reply, provider: 'gemini' };
+    throw lastError || new Error('All Gemini model endpoints failed.');
   }
 
   return { success: false, error: `Unsupported AI provider: ${provider}` };

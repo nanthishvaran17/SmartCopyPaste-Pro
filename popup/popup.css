@@ -623,6 +623,23 @@ body::-webkit-scrollbar {
   border-color: var(--primary);
 }
 
+.easy-ai-key-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: var(--surface-solid);
+  border: 1px dashed rgba(99, 102, 241, 0.4);
+  border-radius: var(--radius-sm);
+}
+
+.easy-ai-key-inline input {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
 .easy-ai-result-box {
   background: var(--surface-solid);
   border: 1px solid rgba(99, 102, 241, 0.35);
