@@ -205,6 +205,153 @@ function initDashboard() {
   $('qa-openTyping')?.addEventListener('click', () => navigateTo('typing'));
 }
 
+// ─── AI Intelligence Hub (ChatGPT · Claude · Gemini) ─────────────────────────
+let currentAIProvider = 'chatgpt';
+let lastAIResponse = '';
+
+function initAI() {
+  $('headerAIBtn')?.addEventListener('click', () => {
+    navigateTo('dashboard');
+    setTimeout(() => {
+      $('aiAssistantCard')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      $('aiPrompt')?.focus();
+    }, 120);
+  });
+
+  // Provider pills
+  $$('.ai-provider-pill').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      $$('.ai-provider-pill').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentAIProvider = btn.dataset.aiProvider;
+      const label = currentAIProvider === 'chatgpt' ? 'ChatGPT (GPT-4o-mini)' : currentAIProvider === 'claude' ? 'Claude (Claude 3.5)' : 'Gemini (1.5 Flash)';
+      if ($('activeAIProviderLabel')) $('activeAIProviderLabel').textContent = label;
+      showToast(`Selected: ${label}`, 'info');
+    });
+  });
+
+  // Quick Task Prompt Chips
+  $$('.ai-chip').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      const task = chip.dataset.aiTask;
+      const promptTa = $('aiPrompt');
+      if (!promptTa) return;
+      const cur = promptTa.value.trim();
+
+      const prefixes = {
+        solve: 'Solve this question step-by-step and provide the final correct answer:\n\n',
+        explain: 'Explain this code snippet, identify any bugs, and provide the clean optimized code:\n\n',
+        summarize: 'Summarize the following content into clear, concise, bullet points:\n\n',
+        humanize: 'Rewrite and polish this text to sound natural, professional, and clear:\n\n'
+      };
+
+      if (!cur) {
+        promptTa.value = prefixes[task] || '';
+      } else {
+        promptTa.value = (prefixes[task] || '') + cur;
+      }
+      promptTa.focus();
+    });
+  });
+
+  // Load Latest Clipboard
+  $('aiLoadClipBtn')?.addEventListener('click', async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text && text.trim()) {
+        const promptTa = $('aiPrompt');
+        if (promptTa) {
+          promptTa.value = text.trim();
+          showToast('Loaded clipboard into AI prompt.', 'info');
+        }
+      } else {
+        showToast('Clipboard is empty.', 'warning');
+      }
+    } catch {
+      showToast('Could not access clipboard.', 'error');
+    }
+  });
+
+  // Open Web Provider
+  $('aiWebBtn')?.addEventListener('click', async () => {
+    await sendBG('openAIWeb', { provider: currentAIProvider });
+  });
+
+  // Run AI Generation
+  $('aiRunBtn')?.addEventListener('click', async () => {
+    const prompt = $('aiPrompt')?.value.trim();
+    if (!prompt) {
+      showToast('Please enter a question or prompt for AI.', 'warning');
+      return;
+    }
+
+    const runBtn = $('aiRunBtn');
+    if (runBtn) {
+      runBtn.disabled = true;
+      runBtn.textContent = 'Generating…';
+    }
+
+    const wrap = $('aiResponseWrap');
+    const content = $('aiResponseContent');
+    const badge = $('aiProviderBadge');
+    if (wrap) wrap.style.display = 'block';
+    if (content) content.textContent = `Connecting to ${currentAIProvider.toUpperCase()}…`;
+
+    try {
+      const res = await sendBG('callAI', { provider: currentAIProvider, prompt });
+      if (res && res.success) {
+        lastAIResponse = res.reply;
+        if (badge) badge.textContent = `${currentAIProvider.toUpperCase()} Output`;
+        if (content) content.textContent = res.reply;
+        showToast('AI response generated!', 'success');
+      } else {
+        const errMsg = res?.error || 'Generation failed.';
+        if (content) content.textContent = `Error: ${errMsg}`;
+        showToast(errMsg, 'error');
+      }
+    } catch (err) {
+      if (content) content.textContent = `Error: ${err.message}`;
+      showToast(err.message, 'error');
+    } finally {
+      if (runBtn) {
+        runBtn.disabled = false;
+        runBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg> Generate';
+      }
+    }
+  });
+
+  // AI Response Actions
+  $('aiCopyBtn')?.addEventListener('click', async () => {
+    if (!lastAIResponse) return;
+    await copyToClipboard(lastAIResponse);
+    showToast('AI response copied!', 'success');
+  });
+
+  $('aiSendToTypingBtn')?.addEventListener('click', () => {
+    if (!lastAIResponse) return;
+    navigateTo('typing');
+    setTimeout(() => {
+      const ta = $('typingText');
+      if (ta) {
+        ta.value = lastAIResponse;
+        updateTypingCharCount();
+      }
+      showToast('Loaded AI response into Typing Engine!', 'success');
+    }, 120);
+  });
+
+  $('aiSaveClipBtn')?.addEventListener('click', async () => {
+    if (!lastAIResponse) return;
+    const res = await sendBG('saveClipboardItem', {
+      item: { text: lastAIResponse, category: 'answer', label: `${currentAIProvider.toUpperCase()} AI Response` }
+    });
+    if (res && res.success) {
+      showToast('Saved to clipboard history!', 'success');
+      loadDashboard();
+    }
+  });
+}
+
 // ─── Smart Clipboard ──────────────────────────────────────────────────────────
 let clipboardItems = [];
 
@@ -1663,6 +1810,12 @@ async function loadSettings() {
       if ($('settingTypingSpeed')) $('settingTypingSpeed').value = s.typingSpeed || 60;
       if ($('settingTypingMode')) $('settingTypingMode').value = s.typingMode || 'character';
       if ($('settingPauseParagraph')) $('settingPauseParagraph').checked = s.pauseAfterParagraph !== false;
+
+      if (s.apiKeys) {
+        if ($('keyChatGPT')) $('keyChatGPT').value = s.apiKeys.chatgpt || '';
+        if ($('keyClaude')) $('keyClaude').value = s.apiKeys.claude || '';
+        if ($('keyGemini')) $('keyGemini').value = s.apiKeys.gemini || '';
+      }
     }
 
     const usage = await sendBG('getStorageUsage');
@@ -1686,7 +1839,12 @@ function initSettings() {
       autoDetectQuestions: $('settingAutoDetect')?.checked === true,
       typingSpeed: parseInt($('settingTypingSpeed')?.value || 60),
       typingMode: $('settingTypingMode')?.value || 'character',
-      pauseAfterParagraph: $('settingPauseParagraph')?.checked === true
+      pauseAfterParagraph: $('settingPauseParagraph')?.checked === true,
+      apiKeys: {
+        chatgpt: $('keyChatGPT')?.value.trim() || '',
+        claude: $('keyClaude')?.value.trim() || '',
+        gemini: $('keyGemini')?.value.trim() || ''
+      }
     };
 
     const res = await sendBG('saveSettings', { settings: newSettings });
@@ -1746,6 +1904,7 @@ async function init() {
   initTheme();
   initNavigation();
   initDashboard();
+  initAI();
   initClipboard();
   initPaste();
   initScanner();

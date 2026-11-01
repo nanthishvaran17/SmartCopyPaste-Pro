@@ -175,6 +175,42 @@ body::-webkit-scrollbar {
   letter-spacing: 0.5px;
 }
 
+.header-right-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ai-hub-header-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: var(--surface);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.ai-hub-header-btn svg {
+  color: var(--primary);
+}
+
+.ai-hub-header-btn:hover {
+  background: var(--accent-gradient);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 2px 10px var(--primary-glow);
+}
+
+.ai-hub-header-btn:hover svg {
+  color: #ffffff;
+}
+
 .theme-toggle {
   width: 32px;
   height: 32px;
@@ -465,6 +501,129 @@ body::-webkit-scrollbar {
   background: var(--surface-hover);
   border-color: var(--primary);
   transform: translateY(-1px);
+}
+
+/* ─── AI Intelligence Hub Card ─────────────────────────────────────────────── */
+.ai-card {
+  border-color: rgba(99, 102, 241, 0.35);
+  background: radial-gradient(circle at 100% 0%, rgba(99, 102, 241, 0.12) 0%, var(--card-bg) 65%);
+}
+
+.ai-provider-selector {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.ai-provider-pill {
+  padding: 6px 4px;
+  background: var(--surface);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: center;
+  transition: all var(--transition);
+}
+
+.ai-provider-pill:hover {
+  color: var(--text);
+  border-color: var(--primary);
+}
+
+.ai-provider-pill.active {
+  background: var(--accent-gradient);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 2px 8px var(--primary-glow);
+}
+
+.ai-prompt-box {
+  margin-bottom: 8px;
+}
+
+.ai-textarea {
+  min-height: 58px;
+  resize: vertical;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.ai-quick-prompts {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.ai-chip {
+  padding: 3px 8px;
+  background: var(--surface);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-full);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.ai-chip:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: rgba(99, 102, 241, 0.12);
+}
+
+.ai-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ai-response-wrap {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: var(--input-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  animation: sectionFade 0.2s ease;
+}
+
+.ai-response-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--card-border);
+}
+
+.ai-response-badge {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ai-response-content {
+  font-size: 12px;
+  color: var(--text);
+  line-height: 1.5;
+  max-height: 140px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--font-mono);
+}
+
+.input--key {
+  font-family: var(--font-mono);
+  letter-spacing: 0.5px;
+  font-size: 11px;
 }
 
 /* ─── Recent Activity ──────────────────────────────────────────────────────── */

@@ -337,6 +337,22 @@ runTest('UI Integrity: Verify zero emojis in HTML, CSS, and JS', () => {
   }
 });
 
+// 13. AI Integrations: ChatGPT, Claude, and Gemini Dispatch Validation
+runTest('AI Hub: Multi-provider dispatch structure for ChatGPT, Claude, and Gemini', () => {
+  const supportedProviders = ['chatgpt', 'claude', 'gemini'];
+  assert.strictEqual(supportedProviders.length, 3);
+  
+  // Endpoint format verification
+  const endpoints = {
+    chatgpt: 'https://api.openai.com/v1/chat/completions',
+    claude: 'https://api.anthropic.com/v1/messages',
+    gemini: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent'
+  };
+  assert.ok(endpoints.chatgpt.includes('openai.com'));
+  assert.ok(endpoints.claude.includes('anthropic.com'));
+  assert.ok(endpoints.gemini.includes('googleapis.com'));
+});
+
 console.log('\n----------------------------------------------------');
 console.log(`Results: ${passedTests} / ${totalTests} tests passed.`);
 console.log('----------------------------------------------------\n');

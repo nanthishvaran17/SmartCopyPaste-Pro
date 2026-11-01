@@ -22,7 +22,16 @@ const DEFAULT_SETTINGS = {
   pauseDuration: 500,
   maxClipboardItems: 200,
   autoDetectQuestions: true,
-  showNotifications: true
+  showNotifications: true,
+  apiKeys: {
+    chatgpt: '',
+    claude: '',
+    gemini: ''
+  },
+  aiProvider: 'gemini',
+  chatgptModel: 'gpt-4o-mini',
+  claudeModel: 'claude-3-5-haiku-20241022',
+  geminiModel: 'gemini-1.5-flash'
 };
 
 const DEFAULT_STATS = {
@@ -142,6 +151,10 @@ async function handleMessage(message, sender) {
       return clearAllData();
     case 'getStorageUsage':
       return getStorageUsage();
+    case 'callAI':
+      return handleAICall(message.provider, message.prompt, message.systemPrompt);
+    case 'openAIWeb':
+      return openAIWeb(message.provider, message.text);
     default:
       throw new Error(`Unknown action: ${action}`);
   }
@@ -490,4 +503,120 @@ function detectCategory(text) {
 function showNotification(message) {
   // Notifications require additional permission - use console for now
   console.log('[SmartPaste Pro]', message);
+}
+
+// ─── AI Integrations: ChatGPT · Claude · Gemini ──────────────────────────────
+async function handleAICall(provider, prompt, systemPrompt = '') {
+  const settingsResult = await getSettings();
+  const settings = settingsResult.settings || {};
+  const apiKeys = settings.apiKeys || {};
+
+  if (!prompt || !prompt.trim()) {
+    return { success: false, error: 'Prompt cannot be empty.' };
+  }
+
+  // 1. OpenAI (ChatGPT)
+  if (provider === 'chatgpt') {
+    const key = apiKeys.chatgpt;
+    if (!key) {
+      return { 
+        success: false, 
+        error: 'OpenAI API key missing. Configure it in Extension Settings, or click "Open Web" to use ChatGPT directly.' 
+      };
+    }
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${key}`
+      },
+      body: JSON.stringify({
+        model: settings.chatgptModel || 'gpt-4o-mini',
+        messages: [
+          ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.7
+      })
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error?.message || `OpenAI error: HTTP ${response.status}`);
+    }
+    const reply = data.choices?.[0]?.message?.content || '';
+    return { success: true, reply, provider: 'chatgpt' };
+  }
+
+  // 2. Anthropic (Claude)
+  if (provider === 'claude') {
+    const key = apiKeys.claude;
+    if (!key) {
+      return { 
+        success: false, 
+        error: 'Anthropic Claude API key missing. Configure it in Extension Settings, or click "Open Web" to use Claude directly.' 
+      };
+    }
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: settings.claudeModel || 'claude-3-5-haiku-20241022',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }],
+        ...(systemPrompt ? { system: systemPrompt } : {})
+      })
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error?.message || `Claude error: HTTP ${response.status}`);
+    }
+    const reply = data.content?.[0]?.text || '';
+    return { success: true, reply, provider: 'claude' };
+  }
+
+  // 3. Google Gemini
+  if (provider === 'gemini') {
+    const key = apiKeys.gemini;
+    if (!key) {
+      return { 
+        success: false, 
+        error: 'Google Gemini API key missing. Configure it in Extension Settings, or click "Open Web" to use Gemini directly.' 
+      };
+    }
+    const model = settings.geminiModel || 'gemini-1.5-flash';
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+    const fullPrompt = systemPrompt ? `${systemPrompt}\n\nTask:\n${prompt}` : prompt;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: fullPrompt }] }]
+      })
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error?.message || `Gemini error: HTTP ${response.status}`);
+    }
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    return { success: true, reply, provider: 'gemini' };
+  }
+
+  return { success: false, error: `Unsupported AI provider: ${provider}` };
+}
+
+async function openAIWeb(provider, text = '') {
+  let url = 'https://chatgpt.com/';
+  if (provider === 'claude') {
+    url = 'https://claude.ai/new';
+  } else if (provider === 'gemini') {
+    url = 'https://gemini.google.com/app';
+  }
+  const tab = await chrome.tabs.create({ url });
+  return { success: true, tabId: tab.id };
 }

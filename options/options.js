@@ -41,6 +41,12 @@ async function loadSettings() {
     $('pauseAfterParagraph').checked = s.pauseAfterParagraph !== false;
     $('pauseDuration').value = s.pauseDuration || 500;
 
+    if (s.apiKeys) {
+      if ($('keyChatGPT')) $('keyChatGPT').value = s.apiKeys.chatgpt || '';
+      if ($('keyClaude')) $('keyClaude').value = s.apiKeys.claude || '';
+      if ($('keyGemini')) $('keyGemini').value = s.apiKeys.gemini || '';
+    }
+
     const usageRes = await sendBG('getStorageUsage');
     if (usageRes && usageRes.success) {
       const pct = Math.min(100, (usageRes.bytesUsed / usageRes.bytesTotal) * 100);
@@ -71,7 +77,12 @@ $('saveBtn').addEventListener('click', async () => {
     maxDelay: parseInt($('maxDelay').value) || 120,
     fixedSpeed: $('fixedSpeed').checked === true,
     pauseAfterParagraph: $('pauseAfterParagraph').checked === true,
-    pauseDuration: parseInt($('pauseDuration').value) || 500
+    pauseDuration: parseInt($('pauseDuration').value) || 500,
+    apiKeys: {
+      chatgpt: $('keyChatGPT')?.value.trim() || '',
+      claude: $('keyClaude')?.value.trim() || '',
+      gemini: $('keyGemini')?.value.trim() || ''
+    }
   };
 
   const res = await sendBG('saveSettings', { settings });

@@ -31,7 +31,20 @@
 - **Confidence Scoring**: Displays extraction confidence percentage based on structural indicators.
 - **Batch Operations**: Copy single questions, copy all formatted questions, save to clipboard history, or export to `.txt`.
 
-### 5. Controlled Typing Engine (Ultra Speed & Instant)
+### 5. AI Intelligence Hub (ChatGPT · Claude · Gemini)
+- **3 Major AI Providers Supported**:
+  - **OpenAI (ChatGPT)**: Powered by GPT-4o / GPT-4o-mini.
+  - **Anthropic (Claude)**: Powered by Claude 3.5 Haiku / Sonnet.
+  - **Google (Gemini)**: Powered by Gemini 1.5 Flash.
+- **One-Click Quick Prompts**:
+  - **Solve Question**: Provides step-by-step logic and the correct answer.
+  - **Explain & Fix Code**: Analyzes code snippets, finds bugs, and provides clean solutions.
+  - **Summarize Content**: Distills complex paragraphs into concise bullet points.
+  - **Humanize & Polish**: Rewrites text to sound natural and professional.
+- **Direct Typing Engine Integration**: One-click `→ Typing` button feeds any generated AI answer directly into the Controlled Typing Engine!
+- **Dual Mode**: Direct in-popup API execution or one-click browser web opening (`chatgpt.com`, `claude.ai`, `gemini.google.com`).
+
+### 6. Controlled Typing Engine (Ultra Speed & Instant)
 - **Granular Modes**:
   - **Instant Mode**: Inserts complete text instantaneously (0 ms delay).
   - **Character Mode**: Keystroke by keystroke insertion with configurable interval.

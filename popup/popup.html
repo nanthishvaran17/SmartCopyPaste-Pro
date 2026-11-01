@@ -21,17 +21,25 @@
         </div>
         <span class="brand-name">SmartPaste Pro</span>
       </div>
-      <button class="theme-toggle" id="themeToggle" title="Toggle theme">
-        <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-        </svg>
-        <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none">
-          <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
-          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-          <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
-          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-        </svg>
-      </button>
+      <div class="header-right-actions">
+        <button class="ai-hub-header-btn" id="headerAIBtn" title="AI Assistant (ChatGPT · Claude · Gemini)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+          </svg>
+          <span>AI Hub</span>
+        </button>
+        <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+          <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+          <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none">
+            <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        </button>
+      </div>
     </header>
 
     <!-- Navigation -->
@@ -177,6 +185,50 @@
               </svg>
               Open Typing Engine
             </button>
+          </div>
+        </div>
+
+        <div class="card ai-card" id="aiAssistantCard">
+          <div class="card-header">
+            <span>AI Intelligence Hub</span>
+            <span class="badge badge--code" id="activeAIProviderLabel">ChatGPT · Claude · Gemini</span>
+          </div>
+          <div class="ai-provider-selector">
+            <button type="button" class="ai-provider-pill active" data-ai-provider="chatgpt">ChatGPT</button>
+            <button type="button" class="ai-provider-pill" data-ai-provider="claude">Claude</button>
+            <button type="button" class="ai-provider-pill" data-ai-provider="gemini">Gemini</button>
+          </div>
+          <div class="ai-prompt-box">
+            <textarea class="textarea ai-textarea" id="aiPrompt" placeholder="Ask AI to solve a question, summarize, or fix code..." rows="3"></textarea>
+          </div>
+          <div class="ai-quick-prompts">
+            <button type="button" class="ai-chip" data-ai-task="solve">Solve Question</button>
+            <button type="button" class="ai-chip" data-ai-task="explain">Explain Code</button>
+            <button type="button" class="ai-chip" data-ai-task="summarize">Summarize</button>
+            <button type="button" class="ai-chip" data-ai-task="humanize">Humanize</button>
+          </div>
+          <div class="ai-actions-row">
+            <button type="button" class="btn btn--primary" id="aiRunBtn">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Generate
+            </button>
+            <button type="button" class="btn btn--secondary btn--sm" id="aiWebBtn" title="Open selected provider in web browser">
+              Open Web
+            </button>
+            <button type="button" class="btn btn--secondary btn--sm" id="aiLoadClipBtn" title="Load latest clipboard into prompt">
+              Load Clip
+            </button>
+          </div>
+          <div class="ai-response-wrap" id="aiResponseWrap" style="display:none">
+            <div class="ai-response-header">
+              <span class="ai-response-badge" id="aiProviderBadge">AI Result</span>
+              <div class="header-actions">
+                <button type="button" class="clip-btn clip-btn--primary" id="aiCopyBtn">Copy</button>
+                <button type="button" class="clip-btn" id="aiSendToTypingBtn">&#8594; Typing</button>
+                <button type="button" class="clip-btn" id="aiSaveClipBtn">Save</button>
+              </div>
+            </div>
+            <div class="ai-response-content" id="aiResponseContent"></div>
           </div>
         </div>
 
@@ -691,6 +743,36 @@
                 <input type="checkbox" id="settingPauseParagraph" checked>
                 <span class="toggle-slider"></span>
               </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span>AI Provider API Keys</span>
+            <span class="badge badge--code">ChatGPT · Claude · Gemini</span>
+          </div>
+          <div class="settings-group">
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">OpenAI (ChatGPT) Key</div>
+                <div class="setting-desc">Used for GPT-4o-mini in-popup generation</div>
+              </div>
+              <input type="password" class="input input--key" id="keyChatGPT" placeholder="sk-...">
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Anthropic (Claude) Key</div>
+                <div class="setting-desc">Used for Claude 3.5 Haiku generation</div>
+              </div>
+              <input type="password" class="input input--key" id="keyClaude" placeholder="sk-ant-...">
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Google Gemini Key</div>
+                <div class="setting-desc">Free from Google AI Studio (Gemini 1.5 Flash)</div>
+              </div>
+              <input type="password" class="input input--key" id="keyGemini" placeholder="AIzaSy...">
             </div>
           </div>
         </div>
