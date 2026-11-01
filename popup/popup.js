@@ -203,6 +203,260 @@ function initDashboard() {
     setTimeout(extractFromPage, 150);
   });
   $('qa-openTyping')?.addEventListener('click', () => navigateTo('typing'));
+  initEasyFlow();
+}
+
+// ─── 1-Click Magic Workflow (Easy Flow) ──────────────────────────────────────
+let easySpeed = 2500;
+let easyMode = 'character';
+let easyAIProvider = 'chatgpt';
+
+function initEasyFlow() {
+  // Step 1: Grab text from webpage
+  $('easyGrabBtn')?.addEventListener('click', async () => {
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!tab) return showToast('No active webpage found', 'error');
+
+      // Try selected text first
+      const selRes = await sendContent(tab.id, { action: 'getSelectedText' }).catch(() => null);
+      if (selRes && selRes.success && selRes.text && selRes.text.trim()) {
+        $('easyTextInput').value = selRes.text.trim();
+        showToast('Selected text grabbed from page!', 'success');
+        return;
+      }
+
+      // If no text was selected, scan for questions or main content
+      const scanRes = await sendContent(tab.id, { action: 'scanPage' }).catch(() => null);
+      if (scanRes && scanRes.success && scanRes.data) {
+        if (scanRes.data.questions && scanRes.data.questions.length > 0) {
+          const q = scanRes.data.questions[0];
+          let qText = q.text || '';
+          if (q.options && q.options.length > 0) {
+            qText += '\n' + q.options.map((o) => `${o.letter}. ${o.text}`).join('\n');
+          }
+          $('easyTextInput').value = qText;
+          showToast('Question grabbed from page!', 'success');
+          return;
+        } else if (scanRes.data.codeBlocks && scanRes.data.codeBlocks.length > 0) {
+          $('easyTextInput').value = scanRes.data.codeBlocks[0].code;
+          showToast('Code block grabbed from page!', 'success');
+          return;
+        }
+      }
+
+      showToast('No text selected on page. Highlight some text and try again!', 'info');
+    } catch (err) {
+      showToast('Could not grab from page: ' + err.message, 'error');
+    }
+  });
+
+  // Step 1: Paste clipboard
+  $('easyPasteClipBtn')?.addEventListener('click', async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text && text.trim()) {
+        $('easyTextInput').value = text.trim();
+        showToast('Clipboard text loaded!', 'success');
+      } else {
+        showToast('Clipboard is empty', 'info');
+      }
+    } catch (err) {
+      showToast('Clipboard permission needed or empty', 'error');
+    }
+  });
+
+  // Step 2: AI Provider selection
+  $$('.easy-provider-pill').forEach((pill) => {
+    pill.addEventListener('click', () => {
+      $$('.easy-provider-pill').forEach((p) => p.classList.remove('active'));
+      pill.classList.add('active');
+      easyAIProvider = pill.dataset.provider;
+      const tag = $('easyAiProviderTag');
+      if (tag) tag.textContent = pill.textContent;
+    });
+  });
+
+  // Step 2: Ask AI to solve / fix code
+  $('easyAiSolveBtn')?.addEventListener('click', async () => {
+    const text = $('easyTextInput')?.value.trim();
+    if (!text) {
+      showToast('Please paste or grab text in Step 1 first!', 'info');
+      $('easyTextInput')?.focus();
+      return;
+    }
+
+    const resultBox = $('easyAiResultBox');
+    const resultText = $('easyAiResultText');
+    const solveBtn = $('easyAiSolveBtn');
+
+    if (resultBox) resultBox.style.display = 'block';
+    if (resultText) resultText.textContent = `Analyzing and solving with ${easyAIProvider.toUpperCase()}...`;
+    if (solveBtn) solveBtn.disabled = true;
+
+    try {
+      const prompt = `Solve this question or fix and write the complete, clean code for the following:\n\n${text}`;
+      const res = await sendBG('generateAI', {
+        provider: easyAIProvider,
+        prompt,
+        task: 'solve'
+      });
+
+      if (res && res.success && res.text) {
+        if (resultText) resultText.textContent = res.text;
+        showToast('AI Solution generated!', 'success');
+      } else {
+        const errMsg = res?.error || 'AI generation failed. Check API key in Settings or click Open Web AI.';
+        if (resultText) resultText.textContent = errMsg;
+        showToast(errMsg, 'error');
+      }
+    } catch (err) {
+      if (resultText) resultText.textContent = `Error: ${err.message}`;
+      showToast(err.message, 'error');
+    } finally {
+      if (solveBtn) solveBtn.disabled = false;
+    }
+  });
+
+  // Step 2: Open Web AI
+  $('easyAiWebBtn')?.addEventListener('click', () => {
+    const query = $('easyTextInput')?.value.trim();
+    sendBG('openAIWeb', { provider: easyAIProvider, query }).catch(() => {});
+    showToast(`Opening ${easyAIProvider} in browser...`, 'info');
+  });
+
+  // Step 2: Use AI result for typing
+  $('easyUseAiResultBtn')?.addEventListener('click', () => {
+    const text = $('easyAiResultText')?.textContent.trim();
+    if (text) {
+      $('easyTextInput').value = text;
+      showToast('Loaded AI code into Auto-Typer! Click START AUTO-TYPING below.', 'success');
+      $('easyStartTypingBtn')?.focus();
+    }
+  });
+
+  // Step 2: Copy AI result
+  $('easyCopyAiBtn')?.addEventListener('click', async () => {
+    const text = $('easyAiResultText')?.textContent;
+    if (text) {
+      await copyToClipboard(text);
+      showToast('AI solution copied to clipboard!', 'success');
+    }
+  });
+
+  // Step 3: Pick Target on Page
+  $('easyPickTargetBtn')?.addEventListener('click', async () => {
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!tab) return showToast('No active webpage found', 'error');
+
+      await sendContent(tab.id, { action: 'startTargetPicker' });
+      showToast('Target picker active! Click any box on your page.', 'info');
+      setTimeout(() => window.close(), 600);
+    } catch (err) {
+      showToast('Target picker error: ' + err.message, 'error');
+    }
+  });
+
+  // Step 3: Speed selection
+  $$('.easy-speed-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      $$('.easy-speed-btn').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      const spd = btn.dataset.speed;
+      easyMode = btn.dataset.mode;
+      easySpeed = spd === 'instant' ? 2500 : parseInt(spd, 10);
+    });
+  });
+
+  // Step 3: Start Auto-Typing
+  $('easyStartTypingBtn')?.addEventListener('click', async () => {
+    const text = $('easyTextInput')?.value;
+    if (!text || !text.trim()) {
+      showToast('Please enter or paste text to type!', 'info');
+      $('easyTextInput')?.focus();
+      return;
+    }
+
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!tab) return showToast('No active tab found', 'error');
+
+      const isInstant = easyMode === 'instant';
+      const isUltra = easySpeed >= 2000;
+
+      const config = {
+        text,
+        mode: easyMode,
+        speed: easySpeed,
+        fixedSpeed: isUltra || isInstant,
+        minDelay: isInstant ? 0 : (isUltra ? 0 : Math.max(1, Math.round(60000 / (easySpeed * 6)))),
+        maxDelay: isInstant ? 0 : (isUltra ? 1 : Math.max(2, Math.round(60000 / (easySpeed * 4)))),
+        pauseDuration: isUltra ? 20 : 150
+      };
+
+      const res = await sendContent(tab.id, { action: 'startTyping', config });
+
+      if (res && res.success) {
+        if ($('easyStartTypingBtn')) $('easyStartTypingBtn').style.display = 'none';
+        if ($('easyStopTypingBtn')) $('easyStopTypingBtn').style.display = 'inline-flex';
+        if ($('easyProgressWrap')) $('easyProgressWrap').style.display = 'block';
+        if ($('easyProgressBar')) $('easyProgressBar').style.width = '10%';
+        if ($('easyProgressPercent')) $('easyProgressPercent').textContent = 'Typing...';
+      } else {
+        showToast(res?.error || 'Could not start typing. Click into your code editor on the page first!', 'error');
+      }
+    } catch (err) {
+      showToast('Typing error: ' + err.message, 'error');
+    }
+  });
+
+  // Step 3: Stop Auto-Typing
+  $('easyStopTypingBtn')?.addEventListener('click', async () => {
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab) {
+        await sendContent(tab.id, { action: 'stopTyping' });
+      }
+    } catch (e) {}
+
+    resetEasyTypingUI();
+    showToast('Typing stopped.', 'info');
+  });
+
+  // Progress message handler
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message.action === 'typingProgress') {
+      const { status, total, typed } = message;
+      const bar = $('easyProgressBar');
+      const pct = $('easyProgressPercent');
+      const st = $('easyProgressStatus');
+
+      if (total && typed !== undefined) {
+        const percent = Math.min(100, Math.round((typed / total) * 100));
+        if (bar) bar.style.width = `${percent}%`;
+        if (pct) pct.textContent = `${percent}%`;
+        if (st) st.textContent = `Typed ${typed} / ${total} chars`;
+      }
+
+      if (status === 'completed') {
+        if (bar) bar.style.width = '100%';
+        if (pct) pct.textContent = '100%';
+        if (st) st.textContent = 'Typing finished!';
+        showToast('Auto-typing complete!', 'success');
+        setTimeout(resetEasyTypingUI, 1200);
+      } else if (status === 'stopped') {
+        resetEasyTypingUI();
+      }
+    }
+  });
+}
+
+function resetEasyTypingUI() {
+  if ($('easyStartTypingBtn')) $('easyStartTypingBtn').style.display = 'inline-flex';
+  if ($('easyStopTypingBtn')) $('easyStopTypingBtn').style.display = 'none';
+  if ($('easyProgressWrap')) $('easyProgressWrap').style.display = 'none';
+  if ($('easyProgressBar')) $('easyProgressBar').style.width = '0%';
 }
 
 // ─── AI Intelligence Hub (ChatGPT · Claude · Gemini) ─────────────────────────

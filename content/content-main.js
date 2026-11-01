@@ -7,6 +7,7 @@ const state = {
   typingAborted: false,
   currentTimeout: null,
   targetField: null,
+  selectedTarget: null,
   typingText: '',
   typingMode: 'character',
   charsTyped: 0,
@@ -38,6 +39,8 @@ async function handleContentMessage(message) {
       return resumeTyping();
     case 'stopTyping':
       return stopTyping();
+    case 'startTargetPicker':
+      return startTargetPicker();
     case 'getSelectedText':
       return { success: true, text: window.getSelection().toString() };
     case 'highlightField':
@@ -330,12 +333,40 @@ async function startTyping(config) {
     return { success: false, error: 'No text to type.' };
   }
   
-  // Find target field
-  const fields = detectInputFields().fields;
-  const target = targetIndex !== undefined ? 
-    document.querySelectorAll('input[type="text"], input[type="search"], input[type="email"], input:not([type]), textarea, [contenteditable="true"], [contenteditable=""]')[targetIndex] :
-    fields[0] ? document.querySelectorAll('input[type="text"], input[type="search"], input[type="email"], input:not([type]), textarea, [contenteditable="true"], [contenteditable=""]')[0] : null;
-  
+  // Target resolution priority:
+  // 1. Explicitly chosen target via on-screen Target Picker
+  // 2. Currently active / focused element (e.g. Monaco / Ace editor, textarea)
+  // 3. User-specified targetIndex
+  // 4. First detected interactive input field
+  let target = state.selectedTarget;
+
+  if (!target || !document.contains(target)) {
+    const active = document.activeElement;
+    if (active && active !== document.body && active !== document.documentElement) {
+      if (
+        active.tagName === 'INPUT' ||
+        active.tagName === 'TEXTAREA' ||
+        active.isContentEditable ||
+        active.getAttribute('contenteditable') === 'true' ||
+        active.closest('.monaco-editor, .ace_editor, .cm-editor, .CodeMirror')
+      ) {
+        target = active;
+      }
+    }
+  }
+
+  if (!target) {
+    const fields = detectInputFields().fields;
+    const allInputs = document.querySelectorAll(
+      'input[type="text"], input[type="search"], input[type="email"], input:not([type]), textarea, [contenteditable="true"], [contenteditable=""]'
+    );
+    if (targetIndex !== undefined && allInputs[targetIndex]) {
+      target = allInputs[targetIndex];
+    } else if (fields.length > 0 && allInputs[fields[0].index]) {
+      target = allInputs[fields[0].index];
+    }
+  }
+
   if (!target) {
     return { success: false, error: 'No eligible input field found on this page.' };
   }
@@ -501,31 +532,79 @@ async function typeByParagraph(target, text, pauseDuration) {
 }
 
 function insertChar(target, char) {
+  try { target.focus(); } catch (e) {}
+  
+  // Strategy 1: Universal execCommand (preserves editor internals for Monaco, Ace, CodeMirror)
+  let success = false;
+  try {
+    success = document.execCommand('insertText', false, char);
+  } catch (err) {}
+  
+  if (success) return;
+
+  // Strategy 2: ContentEditable
   if (target.isContentEditable || target.contentEditable === 'true') {
     insertContentEditableText(char);
-  } else {
-    const start = target.selectionStart;
-    const end = target.selectionEnd;
-    const val = target.value || '';
-    target.value = val.substring(0, start) + char + val.substring(end);
-    target.selectionStart = target.selectionEnd = start + 1;
-    target.dispatchEvent(new Event('input', { bubbles: true }));
-    target.dispatchEvent(new Event('change', { bubbles: true }));
+    return;
   }
+
+  // Strategy 3: Standard text field
+  try {
+    if (typeof target.selectionStart === 'number') {
+      const start = target.selectionStart;
+      const end = target.selectionEnd;
+      const val = target.value || '';
+      target.value = val.substring(0, start) + char + val.substring(end);
+      target.selectionStart = target.selectionEnd = start + 1;
+      target.dispatchEvent(new Event('input', { bubbles: true }));
+      target.dispatchEvent(new Event('change', { bubbles: true }));
+      return;
+    }
+  } catch (err) {}
+
+  // Strategy 4: Direct append fallback
+  try {
+    target.value = (target.value || '') + char;
+    target.dispatchEvent(new Event('input', { bubbles: true }));
+  } catch (e) {}
 }
 
 function insertText(target, text) {
+  try { target.focus(); } catch (e) {}
+  
+  // Strategy 1: Universal execCommand
+  let success = false;
+  try {
+    success = document.execCommand('insertText', false, text);
+  } catch (err) {}
+  
+  if (success) return;
+
+  // Strategy 2: ContentEditable
   if (target.isContentEditable || target.contentEditable === 'true') {
     insertContentEditableText(text);
-  } else {
-    const start = target.selectionStart;
-    const end = target.selectionEnd;
-    const val = target.value || '';
-    target.value = val.substring(0, start) + text + val.substring(end);
-    target.selectionStart = target.selectionEnd = start + text.length;
-    target.dispatchEvent(new Event('input', { bubbles: true }));
-    target.dispatchEvent(new Event('change', { bubbles: true }));
+    return;
   }
+
+  // Strategy 3: Standard text field
+  try {
+    if (typeof target.selectionStart === 'number') {
+      const start = target.selectionStart;
+      const end = target.selectionEnd;
+      const val = target.value || '';
+      target.value = val.substring(0, start) + text + val.substring(end);
+      target.selectionStart = target.selectionEnd = start + text.length;
+      target.dispatchEvent(new Event('input', { bubbles: true }));
+      target.dispatchEvent(new Event('change', { bubbles: true }));
+      return;
+    }
+  } catch (err) {}
+
+  // Strategy 4: Direct append fallback
+  try {
+    target.value = (target.value || '') + text;
+    target.dispatchEvent(new Event('input', { bubbles: true }));
+  } catch (e) {}
 }
 
 function insertContentEditableText(text) {
@@ -539,7 +618,101 @@ function insertContentEditableText(text) {
   range.setEndAfter(node);
   selection.removeAllRanges();
   selection.addRange(range);
-  state.targetField.dispatchEvent(new Event('input', { bubbles: true }));
+  if (state.targetField) {
+    state.targetField.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+}
+
+// ─── Target Picker ────────────────────────────────────────────────────────────
+let hoveredPickerEl = null;
+
+function startTargetPicker() {
+  const existing = document.getElementById('smartpaste-picker-banner');
+  if (existing) existing.remove();
+
+  const toast = document.createElement('div');
+  toast.id = 'smartpaste-picker-banner';
+  toast.style.cssText = [
+    'position: fixed',
+    'top: 16px',
+    'left: 50%',
+    'transform: translateX(-50%)',
+    'background: #0f172a',
+    'color: #ffffff',
+    'padding: 10px 18px',
+    'border-radius: 10px',
+    'font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    'font-size: 13px',
+    'font-weight: 600',
+    'box-shadow: 0 10px 30px rgba(0,0,0,0.5)',
+    'z-index: 2147483647',
+    'display: flex',
+    'align-items: center',
+    'gap: 12px',
+    'border: 1px solid rgba(99, 102, 241, 0.6)'
+  ].join(';');
+
+  toast.innerHTML = '<span>Click any input box or code editor to select it. (ESC to cancel)</span><button id="smartpaste-picker-cancel" style="background: rgba(255,255,255,0.15); border: none; color: #fff; border-radius: 6px; padding: 4px 10px; cursor: pointer; font-size: 11px; font-weight: 700;">Cancel</button>';
+  document.body.appendChild(toast);
+
+  function onMouseOver(e) {
+    if (toast.contains(e.target)) return;
+    if (hoveredPickerEl && hoveredPickerEl !== e.target) {
+      hoveredPickerEl.style.outline = '';
+    }
+    hoveredPickerEl = e.target;
+    hoveredPickerEl.style.outline = '3px solid #6366f1';
+  }
+
+  function onMouseOut(e) {
+    if (e.target && e.target.style) {
+      e.target.style.outline = '';
+    }
+  }
+
+  function onClick(e) {
+    if (toast.contains(e.target)) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    state.selectedTarget = e.target;
+    if (hoveredPickerEl) hoveredPickerEl.style.outline = '3px solid #10b981';
+
+    toast.style.background = '#065f46';
+    toast.style.borderColor = '#10b981';
+    toast.innerHTML = '<span>Target Selected! Return to SmartPaste Pro to type.</span>';
+
+    setTimeout(() => {
+      cleanup();
+    }, 1400);
+  }
+
+  function onKeyDown(e) {
+    if (e.key === 'Escape') {
+      cleanup();
+    }
+  }
+
+  function cleanup() {
+    document.removeEventListener('mouseover', onMouseOver, true);
+    document.removeEventListener('mouseout', onMouseOut, true);
+    document.removeEventListener('click', onClick, true);
+    document.removeEventListener('keydown', onKeyDown, true);
+    if (hoveredPickerEl) {
+      hoveredPickerEl.style.outline = '';
+      hoveredPickerEl = null;
+    }
+    const b = document.getElementById('smartpaste-picker-banner');
+    if (b) b.remove();
+  }
+
+  document.getElementById('smartpaste-picker-cancel')?.addEventListener('click', cleanup);
+  document.addEventListener('mouseover', onMouseOver, true);
+  document.addEventListener('mouseout', onMouseOut, true);
+  document.addEventListener('click', onClick, true);
+  document.addEventListener('keydown', onKeyDown, true);
+
+  return { success: true, message: 'Target picker active' };
 }
 
 function pauseTyping() {

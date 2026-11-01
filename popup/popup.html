@@ -58,11 +58,11 @@
         </svg>
         <span>Clipboard</span>
       </button>
-      <button class="nav-btn" data-section="paste">
+      <button class="nav-btn" data-section="typing">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
         </svg>
-        <span>Paste</span>
+        <span>Auto Typer</span>
       </button>
       <button class="nav-btn" data-section="scanner">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -76,19 +76,6 @@
           <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
         </svg>
         <span>Questions</span>
-      </button>
-      <button class="nav-btn" data-section="typing">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
-        </svg>
-        <span>Typing</span>
-      </button>
-      <button class="nav-btn" data-section="history">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="12 8 12 12 14 14"/>
-          <path d="M3.05 11a9 9 0 1 0 .5-4.5"/><polyline points="3 7 3 11 7 11"/>
-        </svg>
-        <span>History</span>
       </button>
       <button class="nav-btn" data-section="settings">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -104,9 +91,146 @@
 
       <!-- ─── DASHBOARD ─── -->
       <section class="section active" id="section-dashboard">
-        <div class="section-header">
-          <h2>Dashboard</h2>
-          <span class="section-subtitle" id="lastActivity">Ready</span>
+        <!-- ─── 1-CLICK MAGIC WORKFLOW ─── -->
+        <div class="card easy-flow-card">
+          <div class="easy-flow-header">
+            <div class="easy-flow-title">
+              <span class="easy-flow-badge">1-CLICK MAGIC</span>
+              <h3>Fast Auto Typer &amp; AI Solver</h3>
+            </div>
+            <span class="easy-flow-hint">3 simple steps to type into any site</span>
+          </div>
+
+          <!-- STEP 1: INPUT -->
+          <div class="easy-step">
+            <div class="easy-step-top">
+              <div class="easy-step-label">
+                <span class="easy-step-num">1</span>
+                <span class="easy-step-heading">Get Text or Code</span>
+              </div>
+              <div class="easy-step-tools">
+                <button type="button" class="btn-step-tool" id="easyGrabBtn" title="Grab question or selected text from webpage">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                  <span>Grab Page Text</span>
+                </button>
+                <button type="button" class="btn-step-tool" id="easyPasteClipBtn" title="Paste text from clipboard">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                  </svg>
+                  <span>Paste Clipboard</span>
+                </button>
+              </div>
+            </div>
+            <textarea class="textarea easy-flow-textarea" id="easyTextInput" placeholder="Paste your code, question, or problem statement here..." rows="3"></textarea>
+          </div>
+
+          <!-- STEP 2: AI (OPTIONAL) -->
+          <div class="easy-step">
+            <div class="easy-step-top">
+              <div class="easy-step-label">
+                <span class="easy-step-num">2</span>
+                <span class="easy-step-heading">Ask AI (Optional)</span>
+              </div>
+              <div class="easy-ai-providers">
+                <button type="button" class="easy-provider-pill active" data-provider="chatgpt">ChatGPT</button>
+                <button type="button" class="easy-provider-pill" data-provider="claude">Claude</button>
+                <button type="button" class="easy-provider-pill" data-provider="gemini">Gemini</button>
+              </div>
+            </div>
+            <div class="easy-ai-actions">
+              <button type="button" class="btn-easy-ai" id="easyAiSolveBtn">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                </svg>
+                <span>Solve Question / Fix Code</span>
+              </button>
+              <button type="button" class="btn-easy-ai-web" id="easyAiWebBtn" title="Open AI web portal in new tab">
+                <span>Open Web AI</span>
+              </button>
+            </div>
+            <div class="easy-ai-result-box" id="easyAiResultBox" style="display:none">
+              <div class="easy-ai-result-bar">
+                <span class="badge badge--code" id="easyAiProviderTag">ChatGPT</span>
+                <div class="header-actions">
+                  <button type="button" class="clip-btn clip-btn--primary" id="easyUseAiResultBtn">Use for Typing</button>
+                  <button type="button" class="clip-btn" id="easyCopyAiBtn">Copy</button>
+                </div>
+              </div>
+              <div class="easy-ai-result-text" id="easyAiResultText"></div>
+            </div>
+          </div>
+
+          <!-- STEP 3: TYPE -->
+          <div class="easy-step easy-step--final">
+            <div class="easy-step-top">
+              <div class="easy-step-label">
+                <span class="easy-step-num easy-step-num--glow">3</span>
+                <span class="easy-step-heading">Auto-Type into Webpage</span>
+              </div>
+              <button type="button" class="btn-step-tool btn-step-tool--pick" id="easyPickTargetBtn" title="Click any input box or editor on the webpage to target it">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/>
+                  <line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/>
+                </svg>
+                <span>Pick Box on Page</span>
+              </button>
+            </div>
+            <div class="easy-speed-selector">
+              <span class="easy-speed-title">Speed:</span>
+              <button type="button" class="easy-speed-btn active" data-speed="2500" data-mode="character">Ultra (2500 WPM)</button>
+              <button type="button" class="easy-speed-btn" data-speed="800" data-mode="character">Fast (800 WPM)</button>
+              <button type="button" class="easy-speed-btn" data-speed="300" data-mode="character">Human (300 WPM)</button>
+              <button type="button" class="easy-speed-btn" data-speed="instant" data-mode="instant">Instant (0ms)</button>
+            </div>
+            <div class="easy-start-actions">
+              <button type="button" class="btn-easy-start" id="easyStartTypingBtn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+                <span>START AUTO-TYPING</span>
+              </button>
+              <button type="button" class="btn-easy-stop" id="easyStopTypingBtn" style="display:none">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="6" y="6" width="12" height="12" rx="2" ry="2"/>
+                </svg>
+                <span>STOP</span>
+              </button>
+            </div>
+            <div class="easy-progress-bar-wrap" id="easyProgressWrap" style="display:none">
+              <div class="easy-progress-track">
+                <div class="easy-progress-bar" id="easyProgressBar"></div>
+              </div>
+              <div class="easy-progress-meta">
+                <span id="easyProgressStatus">Typing in progress...</span>
+                <span id="easyProgressPercent">0%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Collapsible / Mini Guide -->
+        <div class="card guide-card">
+          <div class="card-header guide-header">
+            <span>Quick Guide</span>
+            <span class="badge badge--code">Easy</span>
+          </div>
+          <div class="guide-steps">
+            <div class="guide-item">
+              <span class="guide-dot">1</span>
+              <span>Click into your code editor or input box on the page first.</span>
+            </div>
+            <div class="guide-item">
+              <span class="guide-dot">2</span>
+              <span>Open SmartPaste Pro, paste code or ask AI to solve it.</span>
+            </div>
+            <div class="guide-item">
+              <span class="guide-dot">3</span>
+              <span>Click <strong>START AUTO-TYPING</strong>. It auto-types into your editor!</span>
+            </div>
+          </div>
         </div>
 
         <div class="stats-grid">
