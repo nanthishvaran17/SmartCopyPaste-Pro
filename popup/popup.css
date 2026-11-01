@@ -67,11 +67,19 @@
   --glass-shadow: 0 4px 20px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
-/* ─── Global Reset ─────────────────────────────────────────────────────────── */
+/* ─── Global Reset & Window Fit ────────────────────────────────────────────── */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+html {
+  width: 470px;
+  height: 580px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden !important;
 }
 
 body {
@@ -79,24 +87,34 @@ body {
   font-size: 13px;
   background: var(--bg-base);
   color: var(--text);
-  width: 480px;
-  min-height: 590px;
-  max-height: 640px;
-  overflow: hidden;
+  width: 470px;
+  height: 580px;
+  max-height: 580px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden !important;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 /* ─── App Container ────────────────────────────────────────────────────────── */
 .app-container {
   display: flex;
   flex-direction: column;
-  height: 640px;
-  width: 480px;
+  height: 580px;
+  max-height: 580px;
+  width: 470px;
   background: var(--bg-gradient);
   position: relative;
-  overflow: hidden;
+  overflow: hidden !important;
 }
 
 /* ─── Header ───────────────────────────────────────────────────────────────── */
@@ -249,16 +267,20 @@ body {
 .app-main {
   flex: 1;
   overflow-y: auto;
-  padding: 14px 16px;
+  overflow-x: hidden;
+  padding: 12px 14px 20px 14px;
   scrollbar-width: thin;
-  scrollbar-color: var(--card-border) transparent;
+  scrollbar-color: rgba(99, 102, 241, 0.25) transparent;
 }
 
-.app-main::-webkit-scrollbar { width: 5px; }
+.app-main::-webkit-scrollbar { width: 4px; }
 .app-main::-webkit-scrollbar-track { background: transparent; }
 .app-main::-webkit-scrollbar-thumb {
-  background: var(--card-border);
+  background: rgba(99, 102, 241, 0.25);
   border-radius: var(--radius-full);
+}
+.app-main::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
 }
 .app-main::-webkit-scrollbar-thumb:hover {
   background: var(--primary);
