@@ -283,6 +283,39 @@ function initEasyFlow() {
     }
   });
 
+  // Step 2: Collapsible Toggle for AI Section
+  const aiToggleBtn = $('easyAiToggleBtn');
+  const aiBody = $('easyAiBody');
+  const aiChevron = $('easyAiChevron');
+  const aiStatusPill = $('easyAiStatusPill');
+
+  function setAiSectionOpen(open) {
+    if (!aiBody) return;
+    if (open) {
+      aiBody.style.display = 'block';
+      if (aiChevron) aiChevron.classList.add('open');
+      if (aiStatusPill) {
+        aiStatusPill.textContent = easyAIProvider.toUpperCase();
+        aiStatusPill.style.color = 'var(--primary)';
+        aiStatusPill.style.borderColor = 'var(--primary)';
+      }
+      checkInlineKey();
+    } else {
+      aiBody.style.display = 'none';
+      if (aiChevron) aiChevron.classList.remove('open');
+      if (aiStatusPill) {
+        aiStatusPill.textContent = 'Click to open';
+        aiStatusPill.style.color = '';
+        aiStatusPill.style.borderColor = '';
+      }
+    }
+  }
+
+  aiToggleBtn?.addEventListener('click', () => {
+    const isCurrentlyOpen = aiBody && aiBody.style.display !== 'none';
+    setAiSectionOpen(!isCurrentlyOpen);
+  });
+
   // Step 2: AI Provider selection
   async function checkInlineKey() {
     const settingsRes = await sendBG('getSettings').catch(() => null);
@@ -305,6 +338,7 @@ function initEasyFlow() {
       easyAIProvider = pill.dataset.provider;
       const tag = $('easyAiProviderTag');
       if (tag) tag.textContent = pill.textContent;
+      if (aiStatusPill) aiStatusPill.textContent = pill.textContent.toUpperCase();
       checkInlineKey();
     });
   });

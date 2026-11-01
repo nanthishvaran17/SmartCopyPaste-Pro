@@ -127,42 +127,53 @@
           </div>
 
           <!-- STEP 2: AI (OPTIONAL) -->
-          <div class="easy-step">
-            <div class="easy-step-top">
+          <div class="easy-step easy-step--collapsible" id="easyStepAI">
+            <div class="easy-step-top easy-step-toggle" id="easyAiToggleBtn" title="Click to show or hide AI Solver">
               <div class="easy-step-label">
                 <span class="easy-step-num">2</span>
                 <span class="easy-step-heading">Ask AI (Optional)</span>
               </div>
-              <div class="easy-ai-providers">
-                <button type="button" class="easy-provider-pill active" data-provider="chatgpt">ChatGPT</button>
-                <button type="button" class="easy-provider-pill" data-provider="claude">Claude</button>
-                <button type="button" class="easy-provider-pill" data-provider="gemini">Gemini</button>
+              <div class="easy-step-right-tools">
+                <span class="easy-ai-status-pill" id="easyAiStatusPill">Click to open</span>
+                <svg class="easy-chevron" id="easyAiChevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
               </div>
             </div>
-            <div class="easy-ai-actions">
-              <button type="button" class="btn-easy-ai" id="easyAiSolveBtn">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-                </svg>
-                <span>Solve Question / Fix Code</span>
-              </button>
-              <button type="button" class="btn-easy-ai-web" id="easyAiWebBtn" title="Open AI web portal in new tab">
-                <span>Open Web AI</span>
-              </button>
-            </div>
-            <div class="easy-ai-key-inline" id="easyAiKeyInline" style="display:none">
-              <input type="password" class="input input--sm" id="easyInlineKeyInput" placeholder="Paste Gemini API key (AQ... or AIza...)">
-              <button type="button" class="btn btn--sm btn--primary" id="easySaveInlineKeyBtn">Save Key</button>
-            </div>
-            <div class="easy-ai-result-box" id="easyAiResultBox" style="display:none">
-              <div class="easy-ai-result-bar">
-                <span class="badge badge--code" id="easyAiProviderTag">ChatGPT</span>
-                <div class="header-actions">
-                  <button type="button" class="clip-btn clip-btn--primary" id="easyUseAiResultBtn">Use for Typing</button>
-                  <button type="button" class="clip-btn" id="easyCopyAiBtn">Copy</button>
+            <div class="easy-ai-body" id="easyAiBody" style="display:none">
+              <div class="easy-ai-providers-row">
+                <span class="easy-ai-label">Select AI:</span>
+                <div class="easy-ai-providers">
+                  <button type="button" class="easy-provider-pill active" data-provider="gemini">Gemini</button>
+                  <button type="button" class="easy-provider-pill" data-provider="chatgpt">ChatGPT</button>
+                  <button type="button" class="easy-provider-pill" data-provider="claude">Claude</button>
                 </div>
               </div>
-              <div class="easy-ai-result-text" id="easyAiResultText"></div>
+              <div class="easy-ai-actions">
+                <button type="button" class="btn-easy-ai" id="easyAiSolveBtn">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                  </svg>
+                  <span>Solve Question / Fix Code</span>
+                </button>
+                <button type="button" class="btn-easy-ai-web" id="easyAiWebBtn" title="Open AI web portal in new tab">
+                  <span>Open Web AI</span>
+                </button>
+              </div>
+              <div class="easy-ai-key-inline" id="easyAiKeyInline" style="display:none">
+                <input type="password" class="input input--sm" id="easyInlineKeyInput" placeholder="Paste Gemini API key (AQ... or AIza...)">
+                <button type="button" class="btn btn--sm btn--primary" id="easySaveInlineKeyBtn">Save Key</button>
+              </div>
+              <div class="easy-ai-result-box" id="easyAiResultBox" style="display:none">
+                <div class="easy-ai-result-bar">
+                  <span class="badge badge--code" id="easyAiProviderTag">Gemini</span>
+                  <div class="header-actions">
+                    <button type="button" class="clip-btn clip-btn--primary" id="easyUseAiResultBtn">Use for Typing</button>
+                    <button type="button" class="clip-btn" id="easyCopyAiBtn">Copy</button>
+                  </div>
+                </div>
+                <div class="easy-ai-result-text" id="easyAiResultText"></div>
+              </div>
             </div>
           </div>
 
