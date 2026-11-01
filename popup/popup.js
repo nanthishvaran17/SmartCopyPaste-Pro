@@ -210,8 +210,25 @@ function initDashboard() {
 let easySpeed = 2500;
 let easyMode = 'character';
 let easyAIProvider = 'chatgpt';
+let easySyncInterval = null;
 
 function initEasyFlow() {
+  // Sync state immediately on popup open
+  syncEasyTypingState();
+
+  // Auto-restore draft text if textarea is empty
+  chrome.storage.local.get(['easyDraftText'], (data) => {
+    if (data && data.easyDraftText && $('easyTextInput') && !$('easyTextInput').value) {
+      $('easyTextInput').value = data.easyDraftText;
+    }
+  });
+
+  // Auto-save draft text whenever user types or pastes
+  $('easyTextInput')?.addEventListener('input', () => {
+    const val = $('easyTextInput').value;
+    chrome.storage.local.set({ easyDraftText: val }).catch(() => {});
+  });
+
   // Step 1: Grab text from webpage
   $('easyGrabBtn')?.addEventListener('click', async () => {
     try {
@@ -378,6 +395,8 @@ function initEasyFlow() {
       return;
     }
 
+    chrome.storage.local.set({ easyDraftText: text }).catch(() => {});
+
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (!tab) return showToast('No active tab found', 'error');
@@ -403,6 +422,7 @@ function initEasyFlow() {
         if ($('easyProgressWrap')) $('easyProgressWrap').style.display = 'block';
         if ($('easyProgressBar')) $('easyProgressBar').style.width = '10%';
         if ($('easyProgressPercent')) $('easyProgressPercent').textContent = 'Typing...';
+        startEasyPolling();
       } else {
         showToast(res?.error || 'Could not start typing. Click into your code editor on the page first!', 'error');
       }
@@ -420,6 +440,7 @@ function initEasyFlow() {
       }
     } catch (e) {}
 
+    stopEasyPolling();
     resetEasyTypingUI();
     showToast('Typing stopped.', 'info');
   });
@@ -440,16 +461,68 @@ function initEasyFlow() {
       }
 
       if (status === 'completed') {
+        stopEasyPolling();
         if (bar) bar.style.width = '100%';
         if (pct) pct.textContent = '100%';
         if (st) st.textContent = 'Typing finished!';
         showToast('Auto-typing complete!', 'success');
         setTimeout(resetEasyTypingUI, 1200);
       } else if (status === 'stopped') {
+        stopEasyPolling();
         resetEasyTypingUI();
       }
     }
   });
+}
+
+async function syncEasyTypingState() {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab) return;
+
+    const status = await sendContent(tab.id, { action: 'getTypingStatus' }).catch(() => null);
+    if (status && status.success && status.typingActive) {
+      if ($('easyStartTypingBtn')) $('easyStartTypingBtn').style.display = 'none';
+      if ($('easyStopTypingBtn')) $('easyStopTypingBtn').style.display = 'inline-flex';
+      if ($('easyProgressWrap')) $('easyProgressWrap').style.display = 'block';
+      if ($('easyTextInput') && status.text) $('easyTextInput').value = status.text;
+
+      const total = status.total || (status.text ? status.text.length : 1);
+      const percent = Math.min(100, Math.round((status.charsTyped / total) * 100));
+      if ($('easyProgressBar')) $('easyProgressBar').style.width = `${percent}%`;
+      if ($('easyProgressPercent')) $('easyProgressPercent').textContent = `${percent}%`;
+      if ($('easyProgressStatus')) $('easyProgressStatus').textContent = `Typed ${status.charsTyped} / ${total} chars`;
+
+      startEasyPolling();
+    }
+  } catch (e) {}
+}
+
+function startEasyPolling() {
+  clearInterval(easySyncInterval);
+  easySyncInterval = setInterval(async () => {
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!tab) return;
+      const status = await sendContent(tab.id, { action: 'getTypingStatus' }).catch(() => null);
+      if (status && status.success && status.typingActive) {
+        const total = status.total || 1;
+        const percent = Math.min(100, Math.round((status.charsTyped / total) * 100));
+        if ($('easyProgressBar')) $('easyProgressBar').style.width = `${percent}%`;
+        if ($('easyProgressPercent')) $('easyProgressPercent').textContent = `${percent}%`;
+        if ($('easyProgressStatus')) $('easyProgressStatus').textContent = `Typed ${status.charsTyped} / ${total} chars`;
+      } else if (status && !status.typingActive) {
+        stopEasyPolling();
+        resetEasyTypingUI();
+      }
+    } catch (e) {
+      stopEasyPolling();
+    }
+  }, 400);
+}
+
+function stopEasyPolling() {
+  clearInterval(easySyncInterval);
 }
 
 function resetEasyTypingUI() {

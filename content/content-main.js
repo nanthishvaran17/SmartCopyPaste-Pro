@@ -39,6 +39,15 @@ async function handleContentMessage(message) {
       return resumeTyping();
     case 'stopTyping':
       return stopTyping();
+    case 'getTypingStatus':
+      return {
+        success: true,
+        typingActive: state.typingActive,
+        typingPaused: state.typingPaused,
+        charsTyped: state.charsTyped,
+        total: state.typingText ? state.typingText.length : 0,
+        text: state.typingText || ''
+      };
     case 'startTargetPicker':
       return startTargetPicker();
     case 'getSelectedText':
@@ -392,6 +401,7 @@ async function startTyping(config) {
   }
   
   sendProgress({ status: 'started', total: text.length, typed: 0, mode });
+  showFloatingTyper(text.length, 0);
   
   try {
     switch (state.typingMode) {
@@ -733,7 +743,12 @@ function stopTyping() {
   state.typingAborted = true;
   state.typingPaused = false;
   state.typingActive = false;
-  sendProgress({ status: 'stopped', typed: state.charsTyped });
+  removeFloatingTyper('Stopped!');
+  sendProgress({
+    status: 'stopped',
+    typed: state.charsTyped,
+    total: state.typingText ? state.typingText.length : 0
+  });
   return { success: true };
 }
 
@@ -753,8 +768,100 @@ function highlightField(fieldIndex) {
 }
 
 function sendProgress(data) {
+  if (data.status === 'started' || data.status === 'typing') {
+    updateFloatingTyper(data.total, data.typed || 0);
+  } else if (data.status === 'completed') {
+    removeFloatingTyper('Finished!');
+  } else if (data.status === 'stopped') {
+    removeFloatingTyper('Stopped!');
+  }
   chrome.runtime.sendMessage({ action: 'typingProgress', ...data }).catch(() => {});
 }
+
+// ─── Floating On-Screen Typer Badge ───────────────────────────────────────────
+function showFloatingTyper(total, typed = 0) {
+  let badge = document.getElementById('smartpaste-floating-badge');
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.id = 'smartpaste-floating-badge';
+    badge.style.cssText = [
+      'position: fixed',
+      'top: 18px',
+      'right: 24px',
+      'background: #090d16',
+      'color: #ffffff',
+      'padding: 8px 14px',
+      'border-radius: 12px',
+      'border: 1px solid rgba(99, 102, 241, 0.6)',
+      'box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 0 15px rgba(99,102,241,0.3)',
+      'z-index: 2147483647',
+      'font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      'font-size: 12px',
+      'font-weight: 600',
+      'display: flex',
+      'align-items: center',
+      'gap: 10px',
+      'pointer-events: auto'
+    ].join(';');
+
+    badge.innerHTML = '<div style="display:flex;align-items:center;gap:6px;"><span style="width:8px;height:8px;border-radius:50%;background:#10b981;box-shadow:0 0 8px #10b981;"></span><span id="smartpaste-badge-text">Auto-Typing: 0%</span></div><button id="smartpaste-badge-stop" style="background:#ef4444;color:#ffffff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:800;cursor:pointer;letter-spacing:0.3px;box-shadow:0 2px 8px rgba(239,68,68,0.4);">STOP (ESC)</button>';
+
+    document.body.appendChild(badge);
+
+    const stopBtn = badge.querySelector('#smartpaste-badge-stop');
+    if (stopBtn) {
+      stopBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        stopTyping();
+      });
+    }
+  }
+
+  const percent = total > 0 ? Math.min(100, Math.round((typed / total) * 100)) : 0;
+  const textEl = badge.querySelector('#smartpaste-badge-text');
+  if (textEl) {
+    textEl.textContent = `Auto-Typing: ${percent}% (${typed}/${total})`;
+  }
+}
+
+function updateFloatingTyper(total, typed) {
+  const badge = document.getElementById('smartpaste-floating-badge');
+  if (!badge) {
+    showFloatingTyper(total, typed);
+    return;
+  }
+  const percent = total > 0 ? Math.min(100, Math.round((typed / total) * 100)) : 0;
+  const textEl = badge.querySelector('#smartpaste-badge-text');
+  if (textEl) {
+    textEl.textContent = `Auto-Typing: ${percent}% (${typed}/${total})`;
+  }
+}
+
+function removeFloatingTyper(message = null) {
+  const badge = document.getElementById('smartpaste-floating-badge');
+  if (!badge) return;
+  if (message) {
+    const textEl = badge.querySelector('#smartpaste-badge-text');
+    if (textEl) textEl.textContent = message;
+    const stopBtn = badge.querySelector('#smartpaste-badge-stop');
+    if (stopBtn) stopBtn.style.display = 'none';
+    setTimeout(() => {
+      const b = document.getElementById('smartpaste-floating-badge');
+      if (b) b.remove();
+    }, 900);
+  } else {
+    badge.remove();
+  }
+}
+
+// Global escape key listener to stop typing immediately
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && state.typingActive) {
+    e.preventDefault();
+    stopTyping();
+  }
+}, true);
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
