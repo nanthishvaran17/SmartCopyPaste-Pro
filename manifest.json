@@ -1,0 +1,52 @@
+{
+  "manifest_version": 3,
+  "name": "SmartPaste Pro",
+  "version": "1.0.0",
+  "description": "Smart Copy-Paste Manager, Website Intelligence Scanner, Question Extractor, and Human-Like Typing Engine",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "default_title": "SmartPaste Pro"
+  },
+  "background": {
+    "service_worker": "background/service-worker.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/content-main.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "options_page": "options/options.html",
+  "permissions": [
+    "storage",
+    "clipboardRead",
+    "clipboardWrite",
+    "activeTab",
+    "scripting",
+    "tabs"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["content/content-styles.css"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

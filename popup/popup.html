@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartPaste Pro</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-brand">
+        <div class="brand-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+            <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+            <line x1="12" y1="11" x2="12" y2="17"/>
+            <line x1="9" y1="14" x2="15" y2="14"/>
+          </svg>
+        </div>
+        <span class="brand-name">SmartPaste Pro</span>
+      </div>
+      <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+        <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+        <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none">
+          <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+      </button>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="app-nav">
+      <button class="nav-btn active" data-section="dashboard">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+        </svg>
+        <span>Dashboard</span>
+      </button>
+      <button class="nav-btn" data-section="clipboard">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+          <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+        </svg>
+        <span>Clipboard</span>
+      </button>
+      <button class="nav-btn" data-section="paste">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        <span>Paste</span>
+      </button>
+      <button class="nav-btn" data-section="scanner">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <span>Scanner</span>
+      </button>
+      <button class="nav-btn" data-section="questions">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <span>Questions</span>
+      </button>
+      <button class="nav-btn" data-section="typing">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
+        </svg>
+        <span>Typing</span>
+      </button>
+      <button class="nav-btn" data-section="history">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="12 8 12 12 14 14"/>
+          <path d="M3.05 11a9 9 0 1 0 .5-4.5"/><polyline points="3 7 3 11 7 11"/>
+        </svg>
+        <span>History</span>
+      </button>
+      <button class="nav-btn" data-section="settings">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+        <span>Settings</span>
+      </button>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="app-main">
+
+      <!-- ─── DASHBOARD ─── -->
+      <section class="section active" id="section-dashboard">
+        <div class="section-header">
+          <h2>Dashboard</h2>
+          <span class="section-subtitle" id="lastActivity">Ready</span>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon stat-icon--blue">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+              </svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value" id="stat-saved">0</div>
+              <div class="stat-label">Saved Items</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon stat-icon--green">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value" id="stat-scanned">0</div>
+              <div class="stat-label">Pages Scanned</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon stat-icon--purple">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value" id="stat-questions">0</div>
+              <div class="stat-label">Questions</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon stat-icon--orange">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
+              </svg>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value" id="stat-typing">0</div>
+              <div class="stat-label">Typing Sessions</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">Quick Actions</div>
+          <div class="quick-actions">
+            <button class="action-btn action-btn--primary" id="qa-captureClipboard">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+              Capture Clipboard
+            </button>
+            <button class="action-btn action-btn--secondary" id="qa-scanPage">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              Scan Page
+            </button>
+            <button class="action-btn action-btn--secondary" id="qa-extractQuestions">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              Extract Questions
+            </button>
+            <button class="action-btn action-btn--secondary" id="qa-openTyping">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
+              </svg>
+              Open Typing Engine
+            </button>
+          </div>
+        </div>
+
+        <div class="card" id="recentActivity">
+          <div class="card-header">Recent Activity</div>
+          <div class="activity-list" id="activityList">
+            <div class="empty-state">No recent activity. Start by capturing some text!</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── CLIPBOARD ─── -->
+      <section class="section" id="section-clipboard">
+        <div class="section-header">
+          <h2>Smart Clipboard</h2>
+          <div class="header-actions">
+            <button class="icon-btn" id="captureClipboardBtn" title="Capture current clipboard">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+            </button>
+            <button class="icon-btn icon-btn--danger" id="clearClipboardBtn" title="Clear all">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <input type="text" class="search-input" id="clipboardSearch" placeholder="Search saved content...">
+          <select class="select-input" id="categoryFilter">
+            <option value="all">All Categories</option>
+            <option value="question">Questions</option>
+            <option value="answer">Answers</option>
+            <option value="paragraph">Paragraphs</option>
+            <option value="code">Source Code</option>
+            <option value="note">Notes</option>
+            <option value="article">Articles</option>
+            <option value="general">General Text</option>
+          </select>
+        </div>
+
+        <div class="clipboard-list" id="clipboardList">
+          <div class="empty-state">No saved items. Capture text from your clipboard or right-click selected text.</div>
+        </div>
+
+        <button class="btn btn--secondary btn--full" id="addManualClipboard">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Add Text Manually
+        </button>
+
+        <!-- Manual add modal overlay -->
+        <div class="modal-overlay" id="manualAddModal" style="display:none">
+          <div class="modal">
+            <div class="modal-header">
+              <h3>Add Text Manually</h3>
+              <button class="icon-btn" id="closeManualModal">&#x2715;</button>
+            </div>
+            <textarea class="textarea" id="manualText" placeholder="Paste or type text here..." rows="6"></textarea>
+            <div class="form-row">
+              <input type="text" class="input" id="manualLabel" placeholder="Label (optional)">
+              <select class="select-input" id="manualCategory">
+                <option value="general">General Text</option>
+                <option value="question">Question</option>
+                <option value="answer">Answer</option>
+                <option value="paragraph">Paragraph</option>
+                <option value="code">Source Code</option>
+                <option value="note">Note</option>
+                <option value="article">Article</option>
+              </select>
+            </div>
+            <div class="modal-actions">
+              <button class="btn btn--secondary" id="cancelManualModal">Cancel</button>
+              <button class="btn btn--primary" id="saveManualModal">Save</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── SMART PASTE ─── -->
+      <section class="section" id="section-paste">
+        <div class="section-header">
+          <h2>Smart Paste</h2>
+        </div>
+
+        <div class="card">
+          <div class="card-header">Paste &amp; Analyze</div>
+          <textarea class="textarea" id="pasteInput" placeholder="Paste or type content here to analyze..." rows="6"></textarea>
+          <div class="btn-group">
+            <button class="btn btn--primary" id="analyzeBtn">Analyze</button>
+            <button class="btn btn--secondary" id="cleanTextBtn">Clean Text</button>
+            <button class="btn btn--secondary" id="formatTextBtn">Format Text</button>
+            <button class="btn btn--secondary" id="extractQBtn">Extract Questions</button>
+            <button class="btn btn--secondary" id="extractParasBtn">Extract Paragraphs</button>
+          </div>
+        </div>
+
+        <div class="card" id="pasteAnalysisCard" style="display:none">
+          <div class="card-header">
+            Analysis Result
+            <span class="badge" id="pasteCategory">&#8211;</span>
+          </div>
+          <div class="paste-stats">
+            <span id="pasteCharCount">0 chars</span>
+            <span>&#183;</span>
+            <span id="pasteWordCount">0 words</span>
+            <span>&#183;</span>
+            <span id="pasteLineCount">0 lines</span>
+            <span>&#183;</span>
+            <span id="pasteParagraphCount">0 paragraphs</span>
+          </div>
+          <div class="paste-preview" id="pastePreview"></div>
+          <div class="btn-group">
+            <button class="btn btn--primary" id="savePasteBtn">Save</button>
+            <button class="btn btn--secondary" id="copyPasteBtn">Copy</button>
+            <button class="btn btn--secondary" id="exportPasteBtn">Export</button>
+            <button class="btn btn--secondary" id="sendToTypingBtn">Send to Typing Engine</button>
+          </div>
+        </div>
+
+        <div class="card" id="pasteQuestionsCard" style="display:none">
+          <div class="card-header">Extracted Questions <span class="badge" id="extractedQCount">0</span></div>
+          <div class="questions-list" id="pasteQuestionsList"></div>
+        </div>
+      </section>
+
+      <!-- ─── SCANNER ─── -->
+      <section class="section" id="section-scanner">
+        <div class="section-header">
+          <h2>Website Scanner</h2>
+        </div>
+
+        <div class="card scan-hero">
+          <div class="scan-icon">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </div>
+          <p class="scan-desc">Scan the current webpage to extract content, headings, questions, and more.</p>
+          <button class="btn btn--primary btn--lg" id="scanPageBtn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            Scan Current Page
+          </button>
+          <div class="scan-status" id="scanStatus"></div>
+        </div>
+
+        <div id="scanResults" style="display:none">
+          <div class="card">
+            <div class="card-header">
+              Page Info
+              <div class="header-actions">
+                <button class="btn btn--sm btn--secondary" id="saveScanBtn">Save Scan</button>
+                <button class="btn btn--sm btn--secondary" id="exportScanBtn">Export</button>
+              </div>
+            </div>
+            <div class="page-info">
+              <div class="info-row"><span class="info-label">Title:</span><span id="scanTitle" class="info-value">&#8211;</span></div>
+              <div class="info-row"><span class="info-label">Domain:</span><span id="scanDomain" class="info-value">&#8211;</span></div>
+              <div class="info-row"><span class="info-label">Words:</span><span id="scanWordCount" class="info-value">&#8211;</span></div>
+              <div class="info-row"><span class="info-label">Headings:</span><span id="scanHeadingsCount" class="info-value">&#8211;</span></div>
+              <div class="info-row"><span class="info-label">Questions:</span><span id="scanQuestionsCount" class="info-value">&#8211;</span></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              Headings
+              <button class="btn btn--sm btn--secondary" id="copyHeadingsBtn">Copy All</button>
+            </div>
+            <div class="result-list" id="headingsList"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              Paragraphs
+              <button class="btn btn--sm btn--secondary" id="copyParagraphsBtn">Copy All</button>
+            </div>
+            <div class="result-list" id="paragraphsList"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              Code Blocks
+              <button class="btn btn--sm btn--secondary" id="copyCodeBtn">Copy All</button>
+            </div>
+            <div class="result-list" id="codeBlocksList"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── QUESTIONS ─── -->
+      <section class="section" id="section-questions">
+        <div class="section-header">
+          <h2>Question Extractor</h2>
+          <div class="header-actions">
+            <button class="btn btn--sm btn--primary" id="extractFromPageBtn">Extract from Page</button>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <input type="text" class="search-input" id="questionSearch" placeholder="Search questions...">
+          <button class="btn btn--sm btn--secondary" id="copyAllQuestionsBtn">Copy All</button>
+          <button class="btn btn--sm btn--secondary" id="saveAllQuestionsBtn">Save All</button>
+          <button class="btn btn--sm btn--secondary" id="exportQuestionsBtn">Export</button>
+        </div>
+
+        <div class="questions-container" id="questionsContainer">
+          <div class="empty-state">No questions extracted yet. Use "Extract from Page" or scan a page.</div>
+        </div>
+      </section>
+
+      <!-- ─── TYPING ENGINE ─── -->
+      <section class="section" id="section-typing">
+        <div class="section-header">
+          <h2>Typing Engine</h2>
+          <span class="badge badge--code" id="speedTag">Ultra Fast</span>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span>Text to Type</span>
+            <span class="typing-word-badge" id="typingWordCountDisplay">0 words</span>
+          </div>
+          <div class="saved-loader-wrap">
+            <select class="select-input select--full" id="savedClipSelector">
+              <option value="">Load from Saved Clipboard Items...</option>
+            </select>
+          </div>
+          <textarea class="textarea" id="typingText" placeholder="Enter, paste, or select text from your saved clipboard items to type into any webpage field..." rows="5"></textarea>
+          <div class="typing-char-count"><span id="typingCharCount">0</span> characters</div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">Speed Presets</div>
+          <div class="speed-presets-grid">
+            <button type="button" class="preset-btn" data-preset="normal">Normal<span class="preset-val">60 WPM</span></button>
+            <button type="button" class="preset-btn" data-preset="fast">Fast<span class="preset-val">180 WPM</span></button>
+            <button type="button" class="preset-btn" data-preset="ultra">Ultra<span class="preset-val">500 WPM</span></button>
+            <button type="button" class="preset-btn" data-preset="extreme">Extreme<span class="preset-val">1000 WPM</span></button>
+            <button type="button" class="preset-btn" data-preset="turbo">Turbo<span class="preset-val">2500 WPM</span></button>
+            <button type="button" class="preset-btn preset-btn--instant" data-preset="instant">Instant<span class="preset-val">0 ms Delay</span></button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">Typing Mode</div>
+          <div class="mode-selector mode-selector--five">
+            <label class="mode-option">
+              <input type="radio" name="typingMode" value="character" checked>
+              <span class="mode-label">
+                <span class="mode-name">Character</span>
+                <span class="mode-desc">Char by char</span>
+              </span>
+            </label>
+            <label class="mode-option">
+              <input type="radio" name="typingMode" value="word">
+              <span class="mode-label">
+                <span class="mode-name">Word</span>
+                <span class="mode-desc">Word by word</span>
+              </span>
+            </label>
+            <label class="mode-option">
+              <input type="radio" name="typingMode" value="line">
+              <span class="mode-label">
+                <span class="mode-name">Line</span>
+                <span class="mode-desc">Line by line</span>
+              </span>
+            </label>
+            <label class="mode-option">
+              <input type="radio" name="typingMode" value="paragraph">
+              <span class="mode-label">
+                <span class="mode-name">Paragraph</span>
+                <span class="mode-desc">Full paragraph</span>
+              </span>
+            </label>
+            <label class="mode-option">
+              <input type="radio" name="typingMode" value="instant">
+              <span class="mode-label">
+                <span class="mode-name">Instant</span>
+                <span class="mode-desc">All at once</span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">Speed Configuration</div>
+          <div class="speed-config">
+            <div class="speed-row">
+              <label>Speed (WPM)</label>
+              <div class="slider-container">
+                <input type="range" id="typingSpeedSlider" min="10" max="2500" step="10" value="60" class="slider">
+                <span class="slider-value" id="typingSpeedValue">60</span>
+              </div>
+            </div>
+            <div class="speed-row">
+              <label>Min Delay (ms)</label>
+              <input type="number" class="input input--sm" id="minDelay" value="30" min="0" max="2000">
+            </div>
+            <div class="speed-row">
+              <label>Max Delay (ms)</label>
+              <input type="number" class="input input--sm" id="maxDelay" value="120" min="0" max="5000">
+            </div>
+            <div class="speed-row">
+              <label>Fixed Speed</label>
+              <label class="toggle">
+                <input type="checkbox" id="fixedSpeed">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+            <div class="speed-row">
+              <label>Pause Duration (ms)</label>
+              <input type="number" class="input input--sm" id="pauseDuration" value="500" min="0" max="10000">
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">Target Field</div>
+          <div class="target-section">
+            <button class="btn btn--secondary btn--full" id="detectFieldsBtn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              Detect Input Fields on Page
+            </button>
+            <div class="fields-list" id="fieldsList">
+              <div class="empty-state">Click "Detect Input Fields" to find text inputs on the current page.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" id="typingConfirmCard" style="display:none">
+          <div class="card-header">Ready to Type</div>
+          <div class="confirm-info">
+            <div class="info-row"><span class="info-label">Target:</span><span id="confirmTarget" class="info-value">&#8211;</span></div>
+            <div class="info-row"><span class="info-label">Mode:</span><span id="confirmMode" class="info-value">&#8211;</span></div>
+            <div class="info-row"><span class="info-label">Speed:</span><span id="confirmSpeed" class="info-value">&#8211;</span></div>
+            <div class="info-row"><span class="info-label">Characters:</span><span id="confirmChars" class="info-value">&#8211;</span></div>
+          </div>
+          <div class="warning-box">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            Text will be typed into the selected field. Do not use on CAPTCHA, authentication, or restricted systems.
+          </div>
+          <button class="btn btn--primary btn--full" id="startTypingBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+            Confirm &amp; Start Typing
+          </button>
+        </div>
+
+        <div class="card" id="typingProgressCard" style="display:none">
+          <div class="card-header">Typing Progress</div>
+          <div class="progress-container">
+            <div class="progress-bar-wrap">
+              <div class="progress-bar" id="typingProgressBar" style="width:0%"></div>
+            </div>
+            <span class="progress-pct" id="typingProgressPct">0%</span>
+          </div>
+          <div class="typing-live-stats">
+            <div class="live-stat"><span class="live-stat-value" id="liveCharsTyped">0</span><span class="live-stat-label">Chars</span></div>
+            <div class="live-stat"><span class="live-stat-value" id="liveWordsTyped">0</span><span class="live-stat-label">Words</span></div>
+            <div class="live-stat"><span class="live-stat-value" id="liveSpeed">0</span><span class="live-stat-label">CPM</span></div>
+            <div class="live-stat"><span class="live-stat-value" id="liveETA">&#8211;</span><span class="live-stat-label">ETA</span></div>
+          </div>
+          <div class="typing-status-badge" id="typingStatusBadge">Idle</div>
+          <div class="typing-controls">
+            <button class="btn btn--secondary" id="pauseTypingBtn" disabled>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
+              </svg>
+              Pause
+            </button>
+            <button class="btn btn--secondary" id="resumeTypingBtn" disabled>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+              Resume
+            </button>
+            <button class="btn btn--danger" id="stopTypingBtn" disabled>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              </svg>
+              Stop
+            </button>
+            <button class="btn btn--secondary" id="restartTypingBtn" disabled>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="1 4 1 10 7 10"/>
+                <path d="M3.51 15a9 9 0 1 0 .49-3.26"/>
+              </svg>
+              Restart
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── HISTORY ─── -->
+      <section class="section" id="section-history">
+        <div class="section-header">
+          <h2>History</h2>
+          <div class="header-actions">
+            <button class="btn btn--sm btn--secondary" id="exportHistoryBtn">Export All</button>
+            <button class="btn btn--sm btn--danger" id="clearAllBtn">Clear All</button>
+          </div>
+        </div>
+
+        <div class="history-tabs">
+          <button class="history-tab active" data-tab="clipboard-history">Clipboard</button>
+          <button class="history-tab" data-tab="scanned-history">Scanned Pages</button>
+          <button class="history-tab" data-tab="questions-history">Questions</button>
+          <button class="history-tab" data-tab="typing-history">Typing Sessions</button>
+        </div>
+
+        <div class="history-panel active" id="tab-clipboard-history">
+          <div class="history-list" id="historyClipboardList"></div>
+        </div>
+        <div class="history-panel" id="tab-scanned-history">
+          <div class="history-list" id="historyScannedList"></div>
+        </div>
+        <div class="history-panel" id="tab-questions-history">
+          <div class="history-list" id="historyQuestionsList"></div>
+        </div>
+        <div class="history-panel" id="tab-typing-history">
+          <div class="history-list" id="historyTypingList"></div>
+        </div>
+      </section>
+
+      <!-- ─── SETTINGS ─── -->
+      <section class="section" id="section-settings">
+        <div class="section-header">
+          <h2>Settings</h2>
+        </div>
+
+        <div class="card">
+          <div class="card-header">Appearance</div>
+          <div class="settings-group">
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Theme</div>
+                <div class="setting-desc">Choose between dark and light mode</div>
+              </div>
+              <select class="select-input" id="settingTheme">
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">Clipboard</div>
+          <div class="settings-group">
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Max Saved Items</div>
+                <div class="setting-desc">Maximum clipboard history items (10&ndash;1000)</div>
+              </div>
+              <input type="number" class="input input--sm" id="settingMaxItems" value="200" min="10" max="1000">
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Auto-Detect Questions</div>
+                <div class="setting-desc">Auto-categorize saved text</div>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" id="settingAutoDetect" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">Typing Defaults</div>
+          <div class="settings-group">
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Default Speed (WPM)</div>
+                <div class="setting-desc">Default typing speed in words per minute (10–2500)</div>
+              </div>
+              <input type="number" class="input input--sm" id="settingTypingSpeed" value="60" min="10" max="2500" step="10">
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Default Mode</div>
+                <div class="setting-desc">Default typing mode</div>
+              </div>
+              <select class="select-input" id="settingTypingMode">
+                <option value="character">Character</option>
+                <option value="word">Word</option>
+                <option value="line">Line</option>
+                <option value="paragraph">Paragraph</option>
+                <option value="instant">Instant (0 ms)</option>
+              </select>
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label">Pause After Paragraph</div>
+                <div class="setting-desc">Add a pause between paragraphs</div>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" id="settingPauseParagraph" checked>
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">Data Management</div>
+          <div class="storage-usage">
+            <div class="storage-bar-wrap">
+              <div class="storage-bar" id="storageBar" style="width:0%"></div>
+            </div>
+            <span class="storage-label" id="storageLabel">0 KB used</span>
+          </div>
+          <div class="btn-group">
+            <button class="btn btn--secondary" id="exportDataBtn">Export All Data</button>
+            <button class="btn btn--secondary" id="importDataBtn">Import Data</button>
+            <button class="btn btn--danger" id="clearAllDataBtn">Clear All Data</button>
+          </div>
+          <input type="file" id="importFileInput" accept=".json" style="display:none">
+        </div>
+
+        <div class="card">
+          <div class="card-header">Save</div>
+          <button class="btn btn--primary btn--full" id="saveSettingsBtn">Save Settings</button>
+        </div>
+
+        <div class="card app-info">
+          <div class="info-row"><span class="info-label">Version:</span><span class="info-value">1.0.0</span></div>
+          <div class="info-row"><span class="info-label">Storage:</span><span class="info-value">chrome.storage.local</span></div>
+          <p class="privacy-note">SmartPaste Pro processes content locally. No data is sent to external servers. Sensitive data (passwords, tokens) is never saved.</p>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Toast notification -->
+    <div class="toast" id="toast" style="display:none"></div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

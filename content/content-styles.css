@@ -1,0 +1,26 @@
+.smartpaste-highlight {
+  outline: 3px solid #6c63ff !important;
+  box-shadow: 0 0 0 6px rgba(108, 99, 255, 0.15) !important;
+  transition: outline 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.smartpaste-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: #1e1e2e;
+  color: #cdd6f4;
+  border: 1px solid #6c63ff;
+  border-radius: 8px;
+  padding: 12px 20px;
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  z-index: 2147483647;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+  animation: spp-slide-in 0.3s ease;
+}
+
+@keyframes spp-slide-in {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
