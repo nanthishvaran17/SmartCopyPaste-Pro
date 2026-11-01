@@ -660,32 +660,50 @@
         </div>
 
         <div class="card">
-          <div class="card-header">Speed Configuration</div>
+          <div class="card-header">
+            <span>Speed Configuration</span>
+            <span class="badge badge--code">Fine Tune</span>
+          </div>
           <div class="speed-config">
             <div class="speed-row">
-              <label>Speed (WPM)</label>
+              <div class="setting-info">
+                <div class="setting-label">Speed (WPM)</div>
+                <div class="setting-desc">Words per minute (60 = normal human, 2500 = ultra fast)</div>
+              </div>
               <div class="slider-container">
                 <input type="range" id="typingSpeedSlider" min="10" max="2500" step="10" value="60" class="slider">
                 <span class="slider-value" id="typingSpeedValue">60</span>
               </div>
             </div>
             <div class="speed-row">
-              <label>Min Delay (ms)</label>
+              <div class="setting-info">
+                <div class="setting-label">Min Delay (ms)</div>
+                <div class="setting-desc">Minimum wait time between keystrokes</div>
+              </div>
               <input type="number" class="input input--sm" id="minDelay" value="30" min="0" max="2000">
             </div>
             <div class="speed-row">
-              <label>Max Delay (ms)</label>
+              <div class="setting-info">
+                <div class="setting-label">Max Delay (ms)</div>
+                <div class="setting-desc">Maximum wait time (creates natural human rhythm)</div>
+              </div>
               <input type="number" class="input input--sm" id="maxDelay" value="120" min="0" max="5000">
             </div>
             <div class="speed-row">
-              <label>Fixed Speed</label>
+              <div class="setting-info">
+                <div class="setting-label">Fixed Speed</div>
+                <div class="setting-desc">Type at a robotic constant speed without random variations</div>
+              </div>
               <label class="toggle">
                 <input type="checkbox" id="fixedSpeed">
                 <span class="toggle-slider"></span>
               </label>
             </div>
             <div class="speed-row">
-              <label>Pause Duration (ms)</label>
+              <div class="setting-info">
+                <div class="setting-label">Pause Duration (ms)</div>
+                <div class="setting-desc">Rest pause between code blocks or lines</div>
+              </div>
               <input type="number" class="input input--sm" id="pauseDuration" value="500" min="0" max="10000">
             </div>
           </div>
