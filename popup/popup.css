@@ -1288,14 +1288,14 @@ body::-webkit-scrollbar {
 .speed-presets-grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  gap: 5px;
+  gap: 6px;
 }
 
 .preset-btn {
   background: var(--surface);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-sm);
-  padding: 8px 2px;
+  padding: 6px 3px;
   font-size: 11px;
   font-weight: 600;
   color: var(--text);
@@ -1305,7 +1305,10 @@ body::-webkit-scrollbar {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 2px;
+  min-height: 44px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .preset-btn:hover {
@@ -1319,10 +1322,10 @@ body::-webkit-scrollbar {
 }
 
 .preset-btn.active {
-  border-color: #1d4ed8;
-  background: #2563eb;
-  color: #ffffff;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+  border-color: #1d4ed8 !important;
+  background: #2563eb !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 10px rgba(37, 99, 235, 0.4) !important;
 }
 
 .preset-val {
@@ -1332,16 +1335,31 @@ body::-webkit-scrollbar {
 }
 
 .preset-btn.active .preset-val {
-  color: rgba(255, 255, 255, 0.85);
+  color: rgba(255, 255, 255, 0.9) !important;
 }
 
+/* Subtle distinctive styling for high speeds */
+.preset-btn--sonic {
+  border-color: rgba(14, 165, 233, 0.3);
+}
+.preset-btn--hyper {
+  border-color: rgba(168, 85, 247, 0.3);
+}
+.preset-btn--god {
+  border-color: rgba(245, 158, 11, 0.35);
+}
+.preset-btn--max {
+  border-color: rgba(239, 68, 68, 0.35);
+}
 .preset-btn--instant {
-  border-color: rgba(16, 185, 129, 0.3);
+  border-color: rgba(16, 185, 129, 0.35);
 }
 
-.preset-btn--instant:hover {
-  border-color: var(--accent-emerald);
-}
+.preset-btn--sonic:hover { border-color: rgba(14, 165, 233, 0.6); }
+.preset-btn--hyper:hover { border-color: rgba(168, 85, 247, 0.6); }
+.preset-btn--god:hover { border-color: rgba(245, 158, 11, 0.7); }
+.preset-btn--max:hover { border-color: rgba(239, 68, 68, 0.7); }
+.preset-btn--instant:hover { border-color: var(--accent-emerald); }
 
 /* ─── Mode Selector (Five Grid) ────────────────────────────────────────────── */
 .mode-selector--five {

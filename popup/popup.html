@@ -92,7 +92,7 @@
       <!-- ─── DASHBOARD ─── -->
       <section class="section active" id="section-dashboard">
         <!-- ─── 1-CLICK MAGIC WORKFLOW ─── -->
-        <div class="card easy-flow-card">
+        <div class="easy-flow-card">
           <div class="easy-flow-header">
             <div class="easy-flow-title">
               <span class="easy-flow-badge">PRO ENGINE</span>
@@ -102,7 +102,7 @@
           </div>
 
           <!-- STEP 1: INPUT -->
-          <div class="easy-step">
+          <div class="easy-step easy-step--editor-card">
             <div class="easy-step-top">
               <div class="easy-step-label">
                 <span class="easy-step-num easy-step-num--1">1</span>
@@ -121,9 +121,16 @@
                   </svg>
                   <span>Paste Clip</span>
                 </button>
+                <button type="button" class="btn-step-tool btn-step-tool--clear" id="easyClearBtn" title="Clear text" style="display:none">
+                  <span>Clear</span>
+                </button>
               </div>
             </div>
             <textarea class="textarea easy-flow-textarea" id="easyTextInput" placeholder="Paste code, problem statement, or text to type..." rows="3"></textarea>
+            <div class="editor-status-bar">
+              <span class="editor-live-status"><span class="status-dot"></span> Ready to type</span>
+              <span class="editor-char-counter" id="easyCharCount">0 characters</span>
+            </div>
           </div>
 
           <!-- STEP 2: AI (OPTIONAL) -->
@@ -195,14 +202,12 @@
             </div>
             <div class="easy-speed-selector">
               <span class="easy-speed-title">Speed:</span>
-              <button type="button" class="easy-speed-btn" data-speed="15000" data-mode="character">Max (15000 WPM)</button>
-              <button type="button" class="easy-speed-btn" data-speed="10000" data-mode="character">God (10000 WPM)</button>
-              <button type="button" class="easy-speed-btn" data-speed="7500" data-mode="character">Hyper (7500 WPM)</button>
-              <button type="button" class="easy-speed-btn" data-speed="5000" data-mode="character">Sonic (5000 WPM)</button>
-              <button type="button" class="easy-speed-btn active" data-speed="2500" data-mode="character">Ultra (2500 WPM)</button>
-              <button type="button" class="easy-speed-btn" data-speed="800" data-mode="character">Fast (800 WPM)</button>
-              <button type="button" class="easy-speed-btn" data-speed="300" data-mode="character">Human (300 WPM)</button>
-              <button type="button" class="easy-speed-btn" data-speed="instant" data-mode="instant">Instant (0ms)</button>
+              <div class="easy-speed-grid">
+                <button type="button" class="easy-speed-btn active" data-speed="2500" data-mode="character">Ultra (2500 WPM)</button>
+                <button type="button" class="easy-speed-btn" data-speed="800" data-mode="character">Fast (800 WPM)</button>
+                <button type="button" class="easy-speed-btn" data-speed="300" data-mode="character">Human (300 WPM)</button>
+                <button type="button" class="easy-speed-btn" data-speed="instant" data-mode="instant">Instant (0ms)</button>
+              </div>
             </div>
             <div class="easy-start-actions">
               <button type="button" class="btn-easy-start" id="easyStartTypingBtn">
@@ -605,22 +610,25 @@
               <option value="">Load from Saved Clipboard Items...</option>
             </select>
           </div>
-          <textarea class="textarea" id="typingText" placeholder="Enter, paste, or select text from your saved clipboard items to type into any webpage field..." rows="5"></textarea>
+          <textarea class="textarea" id="typingText" placeholder="Enter, paste, or select text from your saved clipboard items to type into any webpage field..." rows="3"></textarea>
           <div class="typing-char-count"><span id="typingCharCount">0</span> characters</div>
         </div>
 
-        <div class="card">
-          <div class="card-header">Speed Presets</div>
+        <div class="card speed-presets-card">
+          <div class="card-header">
+            <span>Speed Presets</span>
+            <span class="badge badge--code">60 – 15000 WPM</span>
+          </div>
           <div class="speed-presets-grid">
             <button type="button" class="preset-btn" data-preset="normal">Normal<span class="preset-val">60 WPM</span></button>
             <button type="button" class="preset-btn" data-preset="fast">Fast<span class="preset-val">180 WPM</span></button>
             <button type="button" class="preset-btn" data-preset="ultra">Ultra<span class="preset-val">500 WPM</span></button>
             <button type="button" class="preset-btn" data-preset="extreme">Extreme<span class="preset-val">1000 WPM</span></button>
             <button type="button" class="preset-btn" data-preset="turbo">Turbo<span class="preset-val">2500 WPM</span></button>
-            <button type="button" class="preset-btn" data-preset="sonic">Sonic<span class="preset-val">5000 WPM</span></button>
-            <button type="button" class="preset-btn" data-preset="hyper">Hyper<span class="preset-val">7500 WPM</span></button>
-            <button type="button" class="preset-btn" data-preset="god">God<span class="preset-val">10000 WPM</span></button>
-            <button type="button" class="preset-btn" data-preset="max">Max<span class="preset-val">15000 WPM</span></button>
+            <button type="button" class="preset-btn preset-btn--sonic" data-preset="sonic">Sonic<span class="preset-val">5000 WPM</span></button>
+            <button type="button" class="preset-btn preset-btn--hyper" data-preset="hyper">Hyper<span class="preset-val">7500 WPM</span></button>
+            <button type="button" class="preset-btn preset-btn--god" data-preset="god">God<span class="preset-val">10000 WPM</span></button>
+            <button type="button" class="preset-btn preset-btn--max" data-preset="max">Max<span class="preset-val">15000 WPM</span></button>
             <button type="button" class="preset-btn preset-btn--instant" data-preset="instant">Instant<span class="preset-val">0 ms Delay</span></button>
           </div>
         </div>
