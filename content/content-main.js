@@ -1164,64 +1164,272 @@ let stealthSelectedSpeed = 15000;
 let stealthLastSolution = '';
 let lastUserFocusedTarget = null;
 
+function detectExamLanguage() {
+  try {
+    const langSelect = document.querySelector('select[id*="lang" i], select[name*="lang" i], select[class*="lang" i]');
+    if (langSelect) {
+      const selectedOption = langSelect.options[langSelect.selectedIndex];
+      if (selectedOption && selectedOption.text) return selectedOption.text.trim();
+      if (langSelect.value) return langSelect.value.trim();
+    }
+    const elements = Array.from(document.querySelectorAll('span, div, label, p, button')).filter(el => {
+      if (stealthHost && stealthHost.contains(el)) return false;
+      const t = el.innerText ? el.innerText.trim() : '';
+      return t.toLowerCase().startsWith('language') && t.length < 35;
+    });
+    if (elements.length > 0) {
+      const parts = elements[0].innerText.split(/[:\n]/);
+      if (parts.length > 1 && parts[parts.length - 1].trim()) {
+        return parts[parts.length - 1].trim();
+      }
+    }
+  } catch (e) {}
+  return '';
+}
+
+function getCleanPageSelection() {
+  try {
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return '';
+    const text = sel.toString().trim();
+    if (!text) return '';
+    const anchor = sel.anchorNode;
+    if (anchor && stealthHost && (stealthHost.contains(anchor) || (stealthShadow && stealthShadow.contains(anchor)))) {
+      return '';
+    }
+    return text;
+  } catch (e) {
+    return '';
+  }
+}
+
+function grabExamQuestionFromPage() {
+  const selText = getCleanPageSelection();
+  if (selText && selText.length > 10) return selText;
+
+  const selectors = [
+    'div[class*="problem" i]',
+    'div[class*="question" i]',
+    'div[id*="problem" i]',
+    'div[id*="question" i]',
+    'div[class*="statement" i]',
+    'div[class*="instruction" i]',
+    'div[class*="desc" i]',
+    'section[class*="problem" i]',
+    'main[class*="problem" i]'
+  ];
+
+  for (const s of selectors) {
+    const el = document.querySelector(s);
+    if (el && !stealthHost.contains(el)) {
+      const text = el.innerText ? el.innerText.trim() : '';
+      if (text.length > 30 && (text.includes('Problem Statement') || text.includes('Constraints') || text.includes('Input Format') || text.includes('Output Format') || text.includes('Sample Input'))) {
+        return text;
+      }
+    }
+  }
+
+  // Headings check: e.g. "Problem Statement"
+  const headings = Array.from(document.querySelectorAll('h1, h2, h3, h4, h5, h6, strong, b, div, p')).filter(el => {
+    if (stealthHost && stealthHost.contains(el)) return false;
+    const t = el.innerText ? el.innerText.trim() : '';
+    return t.includes('Problem Statement') || t.includes('Answer The Following') || t.includes('JAVA_') || t.includes('C_');
+  });
+
+  if (headings.length > 0) {
+    const container = headings[0].closest('div[class*="pane" i], div[class*="col" i], div[class*="left" i], div, section') || headings[0].parentElement;
+    if (container && !stealthHost.contains(container)) {
+      const full = container.innerText ? container.innerText.trim() : '';
+      if (full.length > 40) return full;
+    }
+  }
+
+  const scan = scanPage();
+  if (scan && scan.success && scan.data && scan.data.mainContent) {
+    return scan.data.mainContent;
+  }
+
+  return '';
+}
+
 function detectMainExamEditor() {
+  // Check active cursor first
+  if (document.activeElement && document.activeElement !== document.body && document.activeElement !== document.documentElement) {
+    if (!stealthHost || !stealthHost.contains(document.activeElement)) {
+      const resolved = resolveEditableTarget(document.activeElement);
+      if (resolved) return { el: resolved, name: 'Active Cursor Editor' };
+    }
+  }
+
+  // Check last focused target
+  if (lastUserFocusedTarget && document.contains(lastUserFocusedTarget)) {
+    return { el: lastUserFocusedTarget, name: 'Locked Cursor Editor' };
+  }
+
   // 1. Monaco Editor
-  const monacoTa = document.querySelector('.monaco-editor textarea.inputarea');
-  if (monacoTa) return { el: monacoTa, name: 'Monaco Code Editor' };
+  const monaco = document.querySelector('.monaco-editor');
+  if (monaco) {
+    const ta = monaco.querySelector('textarea.inputarea') || monaco.querySelector('textarea');
+    if (ta) return { el: ta, name: 'Monaco Code Editor' };
+  }
 
   // 2. CodeMirror 6 Editor
   const cm6 = document.querySelector('.cm-editor .cm-content[contenteditable="true"]');
   if (cm6) return { el: cm6, name: 'CodeMirror Editor' };
 
   // 3. CodeMirror 5 Editor
-  const cm5 = document.querySelector('.CodeMirror textarea');
-  if (cm5) return { el: cm5, name: 'CodeMirror Editor' };
+  const cm5 = document.querySelector('.CodeMirror');
+  if (cm5) {
+    const ta = cm5.querySelector('textarea') || cm5.querySelector('.CodeMirror-code');
+    if (ta) return { el: ta, name: 'CodeMirror Editor' };
+  }
 
   // 4. Ace Editor
-  const ace = document.querySelector('.ace_editor textarea.ace_text-input') || document.querySelector('.ace_editor textarea');
-  if (ace) return { el: ace, name: 'Ace Code Editor' };
+  const ace = document.querySelector('.ace_editor');
+  if (ace) {
+    const ta = ace.querySelector('textarea.ace_text-input') || ace.querySelector('textarea');
+    if (ta) return { el: ta, name: 'Ace Code Editor' };
+  }
 
-  // 5. Look for code editor containers or textareas by common IDs or classes
-  const codeSelectors = [
-    'textarea[id*="code" i]',
-    'textarea[name*="code" i]',
-    'textarea[class*="code" i]',
-    'textarea[placeholder*="code" i]',
-    'textarea[id*="editor" i]',
-    'textarea[name*="editor" i]',
-    'div[class*="editor" i][contenteditable="true"]',
-    'div[id*="editor" i][contenteditable="true"]',
-    'div[class*="code" i][contenteditable="true"]'
-  ];
-  for (const sel of codeSelectors) {
-    const el = document.querySelector(sel);
-    if (el) {
-      const resolved = resolveEditableTarget(el);
-      if (resolved) return { el: resolved, name: 'Exam Code Editor' };
+  // 5. Look for containers with "code", "editor", "Enter your code"
+  const candidates = Array.from(document.querySelectorAll('div, section, article, main')).filter(c => {
+    if (stealthHost && stealthHost.contains(c)) return false;
+    const txt = (c.getAttribute('aria-label') || c.className || c.id || '').toLowerCase();
+    const inner = (c.innerText || '').slice(0, 100).toLowerCase();
+    return txt.includes('code') || txt.includes('editor') || inner.includes('enter your code');
+  });
+
+  for (const c of candidates) {
+    const innerTa = c.querySelector('textarea, [contenteditable="true"]');
+    if (innerTa) {
+      return { el: innerTa, name: 'Exam Code Box' };
     }
   }
 
-  // 6. Check for any visible textarea on screen by largest area
-  const textareas = Array.from(document.querySelectorAll('textarea, [contenteditable="true"]')).filter(el => {
-    if (stealthHost && stealthHost.contains(el)) return false;
-    const r = el.getBoundingClientRect();
-    return r.width > 50 && r.height > 40;
+  // 6. Look for ANY textarea on page, checking PARENT dimensions or element dimensions
+  const allTextareas = Array.from(document.querySelectorAll('textarea')).filter(ta => {
+    if (stealthHost && stealthHost.contains(ta)) return false;
+    if (ta.disabled || ta.readOnly) return false;
+    const rect = ta.getBoundingClientRect();
+    const parentRect = ta.parentElement ? ta.parentElement.getBoundingClientRect() : { width: 0, height: 0 };
+    return (rect.width > 20 && rect.height > 20) || (parentRect.width > 100 && parentRect.height > 80);
   });
 
-  if (textareas.length > 0) {
-    textareas.sort((a, b) => {
-      const ra = a.getBoundingClientRect();
-      const rb = b.getBoundingClientRect();
-      return (rb.width * rb.height) - (ra.width * ra.height);
+  if (allTextareas.length > 0) {
+    allTextareas.sort((a, b) => {
+      const pa = a.parentElement ? a.parentElement.getBoundingClientRect() : a.getBoundingClientRect();
+      const pb = b.parentElement ? b.parentElement.getBoundingClientRect() : b.getBoundingClientRect();
+      return (pb.width * pb.height) - (pa.width * pa.height);
     });
-    const mainEl = resolveEditableTarget(textareas[0]);
-    return { el: mainEl, name: mainEl.tagName === 'TEXTAREA' ? 'Main Code Box' : 'Rich Code Editor' };
+    return { el: allTextareas[0], name: 'Exam Code Editor' };
+  }
+
+  // 7. Check iframes
+  const iframes = document.querySelectorAll('iframe, frame');
+  for (const iframe of iframes) {
+    try {
+      const iDoc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (iDoc) {
+        const sub = iDoc.querySelector('.monaco-editor textarea.inputarea, .cm-editor .cm-content, .CodeMirror textarea, .ace_editor textarea, textarea');
+        if (sub) return { el: sub, name: 'Iframe Code Editor' };
+      }
+    } catch (e) {}
   }
 
   const input = document.querySelector('input[type="text"], input:not([type])');
   if (input) return { el: input, name: 'Input Field' };
 
   return null;
+}
+
+function executeDeepCodePaste(target, code) {
+  if (!target) return false;
+  try { target.focus(); } catch (e) {}
+
+  let cleanCode = code.replace(/^```[a-zA-Z0-9_-]*\s*\n?/m, '').replace(/\n?```\s*$/m, '').trim();
+
+  // 1. Ace Editor direct API
+  try {
+    const aceEditor = (target.closest && target.closest('.ace_editor')?.env?.editor) || 
+                      (target.env?.editor) || 
+                      (window.ace && typeof window.ace.edit === 'function' ? window.ace.edit(target.closest ? target.closest('.ace_editor') : target) : null);
+    if (aceEditor && typeof aceEditor.setValue === 'function') {
+      aceEditor.setValue(cleanCode, 1);
+      return true;
+    }
+    if (aceEditor && typeof aceEditor.insert === 'function') {
+      aceEditor.insert(cleanCode);
+      return true;
+    }
+  } catch (e) {}
+
+  // 2. CodeMirror direct API
+  try {
+    const cm = target.CodeMirror || (target.closest && target.closest('.CodeMirror')?.CodeMirror);
+    if (cm && typeof cm.setValue === 'function') {
+      cm.setValue(cleanCode);
+      return true;
+    }
+    if (cm && typeof cm.replaceSelection === 'function') {
+      cm.replaceSelection(cleanCode);
+      return true;
+    }
+  } catch (e) {}
+
+  // 3. Monaco direct API
+  try {
+    if (window.monaco && window.monaco.editor) {
+      const models = window.monaco.editor.getModels();
+      if (models && models.length > 0) {
+        models[0].setValue(cleanCode);
+        return true;
+      }
+    }
+  } catch (e) {}
+
+  // 4. Owner Document execCommand
+  try {
+    const doc = target.ownerDocument || document;
+    if (target.select) target.select();
+    if (doc.execCommand('selectAll', false, null)) {
+      if (doc.execCommand('insertText', false, cleanCode)) {
+        return true;
+      }
+    }
+    if (doc.execCommand('insertText', false, cleanCode)) {
+      return true;
+    }
+  } catch (e) {}
+
+  // 5. Standard Textarea / Input with React Native Setter Bypass
+  if (target.tagName === 'TEXTAREA' || target.tagName === 'INPUT' || typeof target.value !== 'undefined') {
+    try {
+      setNativeInputValue(target, cleanCode);
+      try {
+        const inputEvt = new InputEvent('input', {
+          bubbles: true,
+          cancelable: true,
+          inputType: 'insertText',
+          data: cleanCode
+        });
+        target.dispatchEvent(inputEvt);
+      } catch (e) {
+        target.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      target.dispatchEvent(new Event('change', { bubbles: true }));
+      return true;
+    } catch (e) {}
+  }
+
+  // 6. ContentEditable Range Replacement
+  if (target.isContentEditable || target.getAttribute('contenteditable') === 'true') {
+    try {
+      insertContentEditableRange(target, cleanCode);
+      return true;
+    } catch (e) {}
+  }
+
+  return false;
 }
 
 function getTargetDisplayName(el) {
