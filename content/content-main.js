@@ -1768,6 +1768,19 @@ function createStealthHUD() {
       color: #ffffff;
       border-color: #3b82f6;
     }
+    .hud-action-buttons {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .hud-btn-instant-paste {
+      background: #2563eb;
+      border-color: #1d4ed8;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+    }
+    .hud-btn-instant-paste:hover {
+      background: #1d4ed8;
+    }
     .hud-type-btn {
       width: 100%;
       padding: 9px 12px;
@@ -1837,7 +1850,10 @@ function createStealthHUD() {
         <button type="button" class="hud-speed-pill" data-speed="2500">2500</button>
         <button type="button" class="hud-speed-pill" data-speed="instant">Instant</button>
       </div>
-      <button type="button" class="hud-type-btn" id="hudStartTypeBtn">AUTO-TYPE INTO EXAM BOX</button>
+      <div class="hud-action-buttons">
+        <button type="button" class="hud-type-btn hud-btn-instant-paste" id="hudInstantPasteBtn">PASTE NOW (Instant)</button>
+        <button type="button" class="hud-type-btn" id="hudStartTypeBtn">AUTO-TYPE (Stealth)</button>
+      </div>
       <div class="hud-footer">
         <span>Exam Shield: Active (Tab-blur protected)</span>
         <span>Hide: Alt+H / Esc</span>
@@ -1892,30 +1908,16 @@ function createStealthHUD() {
   // Grab button
   stealthShadow.getElementById('hudGrabBtn')?.addEventListener('click', () => {
     const promptInput = stealthShadow.getElementById('hudPromptInput');
-    // Priority 1: User selection
-    const selection = window.getSelection().toString().trim();
-    if (selection) {
-      if (promptInput) promptInput.value = selection;
+    const questionText = grabExamQuestionFromPage();
+    if (questionText) {
+      if (promptInput) {
+        promptInput.value = questionText;
+        promptInput.style.borderColor = '#10b981';
+        setTimeout(() => { if (promptInput) promptInput.style.borderColor = ''; }, 1200);
+      }
       return;
     }
-    // Priority 2: Auto-scanned question or code block
-    const scan = scanPage();
-    if (scan.success && scan.data) {
-      if (scan.data.questions && scan.data.questions.length > 0) {
-        const q = scan.data.questions[0];
-        let qText = q.question;
-        if (q.options && q.options.length) {
-          qText += '\n' + q.options.map(o => `${o.letter}. ${o.text}`).join('\n');
-        }
-        if (promptInput) promptInput.value = qText;
-        return;
-      }
-      if (scan.data.codeBlocks && scan.data.codeBlocks.length > 0) {
-        if (promptInput) promptInput.value = scan.data.codeBlocks[0].code;
-        return;
-      }
-    }
-    alert('Please highlight / select the question text on page first, then click Grab!');
+    alert('Please highlight the question text on page first, then click Grab!');
   });
 
   // Solve with Gemini AI
@@ -1936,18 +1938,25 @@ function createStealthHUD() {
     }
     if (solutionBox) {
       solutionBox.style.display = 'block';
-      solutionBox.textContent = 'Connecting to Gemini AI...';
+      solutionBox.textContent = 'Generating solution with Gemini AI...';
     }
+
+    const detectedLang = detectExamLanguage();
+    const langPrompt = detectedLang 
+      ? `The exam platform is set to ${detectedLang}. You MUST write the complete solution strictly in ${detectedLang}.` 
+      : 'Write the complete solution in clean, production-ready code.';
 
     try {
       const res = await chrome.runtime.sendMessage({
         action: 'generateAI',
         provider: 'gemini',
-        prompt: `Solve this question directly. Output only the clean, complete solution/code:\n\n${prompt}`
+        prompt: `${langPrompt}\nDo NOT include markdown fences, conversational chatter, or explanations. Output ONLY executable raw code ready to compile:\n\n${prompt}`
       });
 
       if (res && res.success && (res.reply || res.text)) {
-        stealthLastSolution = res.reply || res.text;
+        let clean = (res.reply || res.text).trim();
+        clean = clean.replace(/^```[a-zA-Z0-9_-]*\s*\n?/m, '').replace(/\n?```\s*$/m, '').trim();
+        stealthLastSolution = clean;
         if (solutionBox) solutionBox.textContent = stealthLastSolution;
       } else {
         const err = res?.error || 'Failed to generate solution. Check Gemini API key in Settings.';
@@ -2048,7 +2057,58 @@ function createStealthHUD() {
     document.addEventListener('keydown', onPickKey, true);
   });
 
-  // Auto-type button
+  // 1-Click Instant Paste button
+  stealthShadow.getElementById('hudInstantPasteBtn')?.addEventListener('click', async () => {
+    const promptInput = stealthShadow.getElementById('hudPromptInput');
+    const textToPaste = stealthLastSolution || (promptInput ? promptInput.value.trim() : '');
+
+    if (!textToPaste) {
+      alert('No solution or code to paste! Click Solve with Gemini first.');
+      return;
+    }
+
+    let target = resolveEditableTarget(lastUserFocusedTarget || state.selectedTarget);
+    if (!target || !document.contains(target)) {
+      const detected = detectMainExamEditor();
+      if (detected && detected.el) {
+        target = detected.el;
+      }
+    }
+
+    if (!target) {
+      alert('No exam code editor or active cursor detected. Click "Pick Box" to click your editor first!');
+      return;
+    }
+
+    state.selectedTarget = target;
+    lastUserFocusedTarget = target;
+
+    try { target.focus(); } catch (e) {}
+
+    const success = executeDeepCodePaste(target, textToPaste);
+
+    hideStealthHUD();
+
+    if (success) {
+      if (target.style) {
+        target.style.outline = '3px solid #10b981';
+        setTimeout(() => { if (target) target.style.outline = ''; }, 1200);
+      }
+    } else {
+      // Fallback: startTyping instant
+      startTyping({
+        text: textToPaste,
+        mode: 'instant',
+        speed: 15000,
+        fixedSpeed: true,
+        minDelay: 0,
+        maxDelay: 0,
+        pauseDuration: 10
+      });
+    }
+  });
+
+  // Auto-type button (Stealth paced or instant)
   stealthShadow.getElementById('hudStartTypeBtn')?.addEventListener('click', async () => {
     const promptInput = stealthShadow.getElementById('hudPromptInput');
     const textToType = stealthLastSolution || (promptInput ? promptInput.value.trim() : '');
@@ -2083,6 +2143,11 @@ function createStealthHUD() {
     hideStealthHUD();
 
     const isInstant = stealthSelectedSpeed >= 15000;
+    if (isInstant) {
+      const directSuccess = executeDeepCodePaste(target, textToType);
+      if (directSuccess) return;
+    }
+
     const config = {
       text: textToType,
       mode: isInstant ? 'instant' : 'character',
