@@ -126,7 +126,8 @@ h1 {
 }
 
 .setting-info {
-  flex: 1;
+  flex: 1 1 auto;
+  min-width: 200px;
 }
 
 .setting-label {
@@ -162,6 +163,14 @@ h1 {
 .input--sm {
   width: 90px;
   text-align: right;
+}
+
+.input--key {
+  width: 260px !important;
+  max-width: 260px !important;
+  flex: 0 0 260px !important;
+  font-family: var(--font-mono);
+  font-size: 11px;
 }
 
 .select {
