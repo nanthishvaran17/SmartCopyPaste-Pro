@@ -50,6 +50,15 @@ jobs:
           npx cap add android
           npx cap sync android
 
+          # Fix Kotlin stdlib-jdk7/jdk8 duplicate class collision in Gradle
+          cat << 'EOF' >> android/app/build.gradle
+
+configurations.all {
+    exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
+    exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
+}
+EOF
+
       - name: Build Debug APK with Gradle
         working-directory: android
         run: |
