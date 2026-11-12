@@ -1162,6 +1162,130 @@ let stealthHost = null;
 let stealthShadow = null;
 let stealthSelectedSpeed = 15000;
 let stealthLastSolution = '';
+let lastUserFocusedTarget = null;
+
+function detectMainExamEditor() {
+  // 1. Monaco Editor
+  const monacoTa = document.querySelector('.monaco-editor textarea.inputarea');
+  if (monacoTa) return { el: monacoTa, name: 'Monaco Code Editor' };
+
+  // 2. CodeMirror 6 Editor
+  const cm6 = document.querySelector('.cm-editor .cm-content[contenteditable="true"]');
+  if (cm6) return { el: cm6, name: 'CodeMirror Editor' };
+
+  // 3. CodeMirror 5 Editor
+  const cm5 = document.querySelector('.CodeMirror textarea');
+  if (cm5) return { el: cm5, name: 'CodeMirror Editor' };
+
+  // 4. Ace Editor
+  const ace = document.querySelector('.ace_editor textarea.ace_text-input') || document.querySelector('.ace_editor textarea');
+  if (ace) return { el: ace, name: 'Ace Code Editor' };
+
+  // 5. Look for code editor containers or textareas by common IDs or classes
+  const codeSelectors = [
+    'textarea[id*="code" i]',
+    'textarea[name*="code" i]',
+    'textarea[class*="code" i]',
+    'textarea[placeholder*="code" i]',
+    'textarea[id*="editor" i]',
+    'textarea[name*="editor" i]',
+    'div[class*="editor" i][contenteditable="true"]',
+    'div[id*="editor" i][contenteditable="true"]',
+    'div[class*="code" i][contenteditable="true"]'
+  ];
+  for (const sel of codeSelectors) {
+    const el = document.querySelector(sel);
+    if (el) {
+      const resolved = resolveEditableTarget(el);
+      if (resolved) return { el: resolved, name: 'Exam Code Editor' };
+    }
+  }
+
+  // 6. Check for any visible textarea on screen by largest area
+  const textareas = Array.from(document.querySelectorAll('textarea, [contenteditable="true"]')).filter(el => {
+    if (stealthHost && stealthHost.contains(el)) return false;
+    const r = el.getBoundingClientRect();
+    return r.width > 50 && r.height > 40;
+  });
+
+  if (textareas.length > 0) {
+    textareas.sort((a, b) => {
+      const ra = a.getBoundingClientRect();
+      const rb = b.getBoundingClientRect();
+      return (rb.width * rb.height) - (ra.width * ra.height);
+    });
+    const mainEl = resolveEditableTarget(textareas[0]);
+    return { el: mainEl, name: mainEl.tagName === 'TEXTAREA' ? 'Main Code Box' : 'Rich Code Editor' };
+  }
+
+  const input = document.querySelector('input[type="text"], input:not([type])');
+  if (input) return { el: input, name: 'Input Field' };
+
+  return null;
+}
+
+function getTargetDisplayName(el) {
+  if (!el) return 'No target selected';
+  if (el.closest && el.closest('.monaco-editor')) return 'Monaco Code Editor';
+  if (el.closest && el.closest('.cm-editor, .CodeMirror')) return 'CodeMirror Editor';
+  if (el.closest && el.closest('.ace_editor')) return 'Ace Code Editor';
+  if (el.tagName === 'TEXTAREA') {
+    const idOrClass = el.id || el.className || el.name || '';
+    if (idOrClass.toLowerCase().includes('code')) return 'Exam Code Area';
+    return 'Code Textarea';
+  }
+  if (el.isContentEditable || el.contentEditable === 'true') return 'Rich Code Editor';
+  if (el.tagName === 'INPUT') return 'Input Field';
+  return 'Exam Box';
+}
+
+function updateHUDTargetStatus() {
+  if (!stealthShadow) return;
+  const nameEl = stealthShadow.getElementById('hudTargetName');
+  const dotEl = stealthShadow.getElementById('hudTargetDot');
+  if (!nameEl || !dotEl) return;
+
+  if (lastUserFocusedTarget && document.contains(lastUserFocusedTarget)) {
+    nameEl.textContent = `${getTargetDisplayName(lastUserFocusedTarget)} (Locked)`;
+    nameEl.style.color = '#34d399';
+    dotEl.style.background = '#10b981';
+    dotEl.style.boxShadow = '0 0 6px rgba(16, 185, 129, 0.6)';
+    return;
+  }
+
+  const detected = detectMainExamEditor();
+  if (detected && detected.el) {
+    nameEl.textContent = `${detected.name} (Auto-detected)`;
+    nameEl.style.color = '#38bdf8';
+    dotEl.style.background = '#38bdf8';
+    dotEl.style.boxShadow = '0 0 6px rgba(56, 189, 248, 0.6)';
+    return;
+  }
+
+  nameEl.textContent = 'Click "Pick Box" or click editor';
+  nameEl.style.color = '#f59e0b';
+  dotEl.style.background = '#f59e0b';
+  dotEl.style.boxShadow = 'none';
+}
+
+// Track cursor focus and clicks across the web page
+document.addEventListener('focusin', (e) => {
+  if (stealthHost && stealthHost.contains(e.target)) return;
+  const resolved = resolveEditableTarget(e.target);
+  if (resolved) {
+    lastUserFocusedTarget = resolved;
+    updateHUDTargetStatus();
+  }
+}, true);
+
+document.addEventListener('pointerdown', (e) => {
+  if (stealthHost && stealthHost.contains(e.target)) return;
+  const resolved = resolveEditableTarget(e.target);
+  if (resolved) {
+    lastUserFocusedTarget = resolved;
+    updateHUDTargetStatus();
+  }
+}, true);
 
 function createStealthHUD() {
   if (stealthHost) return;
@@ -1347,6 +1471,63 @@ function createStealthHUD() {
       word-break: break-word;
       display: none;
     }
+    .hud-target-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 10px;
+      background: #070a12;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+    }
+    .hud-target-info {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow: hidden;
+      flex: 1;
+    }
+    .hud-target-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+      flex-shrink: 0;
+    }
+    .hud-target-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #94a3b8;
+      flex-shrink: 0;
+    }
+    .hud-target-name {
+      font-size: 10.5px;
+      font-weight: 600;
+      color: #34d399;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .hud-target-pick-btn {
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #93c5fd;
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-size: 9.5px;
+      font-weight: 600;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all 0.12s;
+    }
+    .hud-target-pick-btn:hover {
+      background: #2563eb;
+      color: #ffffff;
+      border-color: #3b82f6;
+    }
     .hud-speeds-wrap {
       display: flex;
       align-items: center;
@@ -1432,6 +1613,14 @@ function createStealthHUD() {
       </div>
       <textarea class="hud-textarea" id="hudPromptInput" placeholder="Paste or grab question from the exam page..."></textarea>
       <div class="hud-solution-box" id="hudSolutionBox"></div>
+      <div class="hud-target-row">
+        <div class="hud-target-info">
+          <div class="hud-target-dot" id="hudTargetDot"></div>
+          <span class="hud-target-label">Target:</span>
+          <span class="hud-target-name" id="hudTargetName">Detecting cursor...</span>
+        </div>
+        <button type="button" class="hud-target-pick-btn" id="hudPickBoxBtn" title="Click to manually pick exam editor / cursor box">Pick Box</button>
+      </div>
       <div class="hud-speeds-wrap">
         <span class="hud-speed-label">Speed:</span>
         <button type="button" class="hud-speed-pill active" data-speed="15000">15000 WPM</button>
@@ -1576,6 +1765,81 @@ function createStealthHUD() {
     });
   });
 
+  // Pick Box on Page button
+  stealthShadow.getElementById('hudPickBoxBtn')?.addEventListener('click', () => {
+    stealthHost.style.display = 'none';
+
+    const pickerNotice = document.createElement('div');
+    pickerNotice.id = 'smartpaste-hud-picker-notice';
+    pickerNotice.style.cssText = [
+      'position: fixed',
+      'top: 18px',
+      'left: 50%',
+      'transform: translateX(-50%)',
+      'background: #0f172a',
+      'color: #ffffff',
+      'padding: 10px 18px',
+      'border-radius: 10px',
+      'font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      'font-size: 13px',
+      'font-weight: 600',
+      'box-shadow: 0 10px 30px rgba(0,0,0,0.5)',
+      'z-index: 2147483647',
+      'border: 1px solid #10b981'
+    ].join(';');
+    pickerNotice.textContent = 'Click inside your exam code editor to lock cursor!';
+    document.documentElement.appendChild(pickerNotice);
+
+    let hoveredEl = null;
+    function onPickHover(e) {
+      if (pickerNotice.contains(e.target)) return;
+      if (hoveredEl && hoveredEl !== e.target) hoveredEl.style.outline = '';
+      hoveredEl = e.target;
+      hoveredEl.style.outline = '3px solid #10b981';
+    }
+
+    function onPickClick(e) {
+      if (pickerNotice.contains(e.target)) return;
+      e.preventDefault();
+      e.stopPropagation();
+
+      const resolved = resolveEditableTarget(e.target);
+      lastUserFocusedTarget = resolved || e.target;
+      state.selectedTarget = lastUserFocusedTarget;
+
+      cleanupPicker();
+      stealthHost.style.display = 'block';
+      updateHUDTargetStatus();
+
+      if (lastUserFocusedTarget && lastUserFocusedTarget.style) {
+        lastUserFocusedTarget.style.outline = '3px solid #10b981';
+        setTimeout(() => { if (lastUserFocusedTarget) lastUserFocusedTarget.style.outline = ''; }, 1200);
+      }
+    }
+
+    function onPickKey(e) {
+      if (e.key === 'Escape') {
+        cleanupPicker();
+        stealthHost.style.display = 'block';
+      }
+    }
+
+    function cleanupPicker() {
+      document.removeEventListener('mouseover', onPickHover, true);
+      document.removeEventListener('click', onPickClick, true);
+      document.removeEventListener('keydown', onPickKey, true);
+      if (hoveredEl) {
+        hoveredEl.style.outline = '';
+        hoveredEl = null;
+      }
+      if (pickerNotice) pickerNotice.remove();
+    }
+
+    document.addEventListener('mouseover', onPickHover, true);
+    document.addEventListener('click', onPickClick, true);
+    document.addEventListener('keydown', onPickKey, true);
+  });
+
   // Auto-type button
   stealthShadow.getElementById('hudStartTypeBtn')?.addEventListener('click', async () => {
     const promptInput = stealthShadow.getElementById('hudPromptInput');
@@ -1585,6 +1849,27 @@ function createStealthHUD() {
       alert('No solution or text to type! Click Solve with Gemini first.');
       return;
     }
+
+    // Determine target (cursor or detected exam editor)
+    let target = resolveEditableTarget(lastUserFocusedTarget || state.selectedTarget);
+    if (!target || !document.contains(target)) {
+      const detected = detectMainExamEditor();
+      if (detected && detected.el) {
+        target = detected.el;
+      }
+    }
+
+    if (!target) {
+      alert('No exam code editor or active cursor detected. Click "Pick Box" to click your editor first!');
+      return;
+    }
+
+    state.selectedTarget = target;
+    lastUserFocusedTarget = target;
+
+    try {
+      target.focus();
+    } catch (e) {}
 
     // Hide HUD during typing so screen is completely clear for invigilators
     hideStealthHUD();
@@ -1608,6 +1893,7 @@ function showStealthHUD() {
   if (!stealthHost) createStealthHUD();
   if (stealthHost) {
     stealthHost.style.display = 'block';
+    updateHUDTargetStatus();
   }
 }
 
