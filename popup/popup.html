@@ -614,8 +614,28 @@
             <span>Text to Type</span>
             <span class="typing-word-badge" id="typingWordCountDisplay">0 words</span>
           </div>
-          <div class="saved-loader-wrap">
-            <select class="select-input select--full" id="savedClipSelector">
+          <div class="saved-loader-wrap custom-clip-picker" id="customClipPicker">
+            <button type="button" class="clip-picker-trigger" id="clipPickerTrigger">
+              <div class="clip-picker-left">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                  <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+                </svg>
+                <span class="clip-picker-selected" id="clipPickerSelectedText">Load from Saved Clipboard Items...</span>
+              </div>
+              <svg class="clip-picker-arrow" id="clipPickerArrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+            <div class="clip-picker-dropdown" id="clipPickerDropdown" style="display:none">
+              <div class="clip-picker-search-wrap">
+                <input type="text" class="clip-picker-search" id="clipPickerSearch" placeholder="Filter saved clips...">
+              </div>
+              <div class="clip-picker-list" id="clipPickerList">
+                <div class="clip-picker-empty">No saved clips found</div>
+              </div>
+            </div>
+            <select class="select-input select--full" id="savedClipSelector" style="display:none">
               <option value="">Load from Saved Clipboard Items...</option>
             </select>
           </div>
@@ -847,142 +867,140 @@
         </div>
       </section>
 
-      <!-- ─── SETTINGS ─── -->
+      <!-- ─── SETTINGS (Apple iOS / macOS Inset Grouped Style) ─── -->
       <section class="section" id="section-settings">
         <div class="section-header">
           <h2>Settings</h2>
         </div>
 
-        <div class="card">
-          <div class="card-header">Appearance</div>
-          <div class="settings-group">
-            <div class="setting-row">
-              <div class="setting-info">
-                <div class="setting-label">Theme</div>
-                <div class="setting-desc">Choose between dark and light mode</div>
-              </div>
-              <select class="select-input" id="settingTheme">
-                <option value="dark">Dark</option>
-                <option value="light">Light</option>
-              </select>
+        <div class="settings-section-title">Appearance</div>
+        <div class="settings-group">
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-label">Theme</div>
+              <div class="setting-desc">Choose between dark and light mode</div>
             </div>
+            <select class="select-input" id="settingTheme">
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
+            </select>
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-header">Clipboard</div>
-          <div class="settings-group">
-            <div class="setting-row">
-              <div class="setting-info">
-                <div class="setting-label">Max Saved Items</div>
-                <div class="setting-desc">Maximum clipboard history items (10&ndash;1000)</div>
-              </div>
-              <input type="number" class="input input--sm" id="settingMaxItems" value="200" min="10" max="1000">
+        <div class="settings-section-title">Clipboard</div>
+        <div class="settings-group">
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-label">Max Saved Items</div>
+              <div class="setting-desc">Maximum clipboard history items (10&ndash;1000)</div>
             </div>
-            <div class="setting-row">
-              <div class="setting-info">
-                <div class="setting-label">Auto-Detect Questions</div>
-                <div class="setting-desc">Auto-categorize saved text</div>
-              </div>
-              <label class="toggle">
-                <input type="checkbox" id="settingAutoDetect" checked>
-                <span class="toggle-slider"></span>
-              </label>
+            <input type="number" class="input input--sm" id="settingMaxItems" value="200" min="10" max="1000">
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-label">Auto-Detect Questions</div>
+              <div class="setting-desc">Auto-categorize saved text</div>
             </div>
+            <label class="toggle">
+              <input type="checkbox" id="settingAutoDetect" checked>
+              <span class="toggle-slider"></span>
+            </label>
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-header">Typing Defaults</div>
-          <div class="settings-group">
-            <div class="setting-row">
-              <div class="setting-info">
-                <div class="setting-label">Default Speed (WPM)</div>
-                <div class="setting-desc">Default typing speed in words per minute (10–15000)</div>
-              </div>
-              <input type="number" class="input input--sm" id="settingTypingSpeed" value="60" min="10" max="15000" step="50">
+        <div class="settings-section-title">Typing Defaults</div>
+        <div class="settings-group">
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-label">Default Speed (WPM)</div>
+              <div class="setting-desc">Default typing speed in words per minute (10–15000)</div>
             </div>
-            <div class="setting-row">
-              <div class="setting-info">
-                <div class="setting-label">Default Mode</div>
-                <div class="setting-desc">Default typing mode</div>
-              </div>
-              <select class="select-input" id="settingTypingMode">
-                <option value="character">Character</option>
-                <option value="word">Word</option>
-                <option value="line">Line</option>
-                <option value="paragraph">Paragraph</option>
-                <option value="instant">Instant (0 ms)</option>
-              </select>
+            <input type="number" class="input input--sm" id="settingTypingSpeed" value="60" min="10" max="15000" step="50">
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-label">Default Mode</div>
+              <div class="setting-desc">Default typing mode</div>
             </div>
-            <div class="setting-row">
-              <div class="setting-info">
-                <div class="setting-label">Pause After Paragraph</div>
-                <div class="setting-desc">Add a pause between paragraphs</div>
-              </div>
-              <label class="toggle">
-                <input type="checkbox" id="settingPauseParagraph" checked>
-                <span class="toggle-slider"></span>
-              </label>
+            <select class="select-input" id="settingTypingMode">
+              <option value="character">Character</option>
+              <option value="word">Word</option>
+              <option value="line">Line</option>
+              <option value="paragraph">Paragraph</option>
+              <option value="instant">Instant (0 ms)</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-label">Pause After Paragraph</div>
+              <div class="setting-desc">Add a pause between paragraphs</div>
             </div>
+            <label class="toggle">
+              <input type="checkbox" id="settingPauseParagraph" checked>
+              <span class="toggle-slider"></span>
+            </label>
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-header">
-            <span>AI Provider API Keys</span>
-            <span class="badge badge--code">ChatGPT · Claude · Gemini</span>
+        <div class="settings-section-title">AI Provider API Keys</div>
+        <div class="settings-group">
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-label">OpenAI (ChatGPT) Key</div>
+              <div class="setting-desc">Used for GPT-4o-mini in-popup generation</div>
+            </div>
+            <input type="password" class="input input--key" id="keyChatGPT" placeholder="sk-...">
           </div>
-          <div class="settings-group">
-            <div class="setting-row">
-              <div class="setting-info">
-                <div class="setting-label">OpenAI (ChatGPT) Key</div>
-                <div class="setting-desc">Used for GPT-4o-mini in-popup generation</div>
-              </div>
-              <input type="password" class="input input--key" id="keyChatGPT" placeholder="sk-...">
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-label">Anthropic (Claude) Key</div>
+              <div class="setting-desc">Used for Claude 3.5 Haiku generation</div>
             </div>
-            <div class="setting-row">
-              <div class="setting-info">
-                <div class="setting-label">Anthropic (Claude) Key</div>
-                <div class="setting-desc">Used for Claude 3.5 Haiku generation</div>
-              </div>
-              <input type="password" class="input input--key" id="keyClaude" placeholder="sk-ant-...">
+            <input type="password" class="input input--key" id="keyClaude" placeholder="sk-ant-...">
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-label">Google Gemini Key</div>
+              <div class="setting-desc">Free from Google AI Studio (Gemini 1.5 Flash)</div>
             </div>
-            <div class="setting-row">
-              <div class="setting-info">
-                <div class="setting-label">Google Gemini Key</div>
-                <div class="setting-desc">Free from Google AI Studio (Gemini 1.5 Flash)</div>
-              </div>
-              <input type="password" class="input input--key" id="keyGemini" placeholder="AIzaSy...">
-            </div>
+            <input type="password" class="input input--key" id="keyGemini" placeholder="AIzaSy...">
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-header">Data Management</div>
-          <div class="storage-usage">
-            <div class="storage-bar-wrap">
-              <div class="storage-bar" id="storageBar" style="width:0%"></div>
+        <div class="settings-section-title">Data Management</div>
+        <div class="settings-group">
+          <div class="setting-row setting-row--block">
+            <div class="storage-usage">
+              <div class="storage-bar-wrap">
+                <div class="storage-bar" id="storageBar" style="width:0%"></div>
+              </div>
+              <span class="storage-label" id="storageLabel">0 KB used</span>
             </div>
-            <span class="storage-label" id="storageLabel">0 KB used</span>
+            <div class="btn-group">
+              <button class="btn btn--secondary" id="exportDataBtn">Export All Data</button>
+              <button class="btn btn--secondary" id="importDataBtn">Import Data</button>
+              <button class="btn btn--danger" id="clearAllDataBtn">Clear All Data</button>
+            </div>
+            <input type="file" id="importFileInput" accept=".json" style="display:none">
           </div>
-          <div class="btn-group">
-            <button class="btn btn--secondary" id="exportDataBtn">Export All Data</button>
-            <button class="btn btn--secondary" id="importDataBtn">Import Data</button>
-            <button class="btn btn--danger" id="clearAllDataBtn">Clear All Data</button>
-          </div>
-          <input type="file" id="importFileInput" accept=".json" style="display:none">
         </div>
 
-        <div class="card">
-          <div class="card-header">Save</div>
-          <button class="btn btn--primary btn--full" id="saveSettingsBtn">Save Settings</button>
+        <div class="settings-save-wrap">
+          <button class="btn btn--primary btn--full btn--lg" id="saveSettingsBtn">Save Settings</button>
         </div>
 
-        <div class="card app-info">
-          <div class="info-row"><span class="info-label">Version:</span><span class="info-value">1.0.0</span></div>
-          <div class="info-row"><span class="info-label">Storage:</span><span class="info-value">chrome.storage.local</span></div>
-          <p class="privacy-note">SmartPaste Pro processes content locally. No data is sent to external servers. Sensitive data (passwords, tokens) is never saved.</p>
+        <div class="settings-group app-info">
+          <div class="setting-row">
+            <span class="info-label">Version</span>
+            <span class="info-value">1.0.0</span>
+          </div>
+          <div class="setting-row">
+            <span class="info-label">Storage Engine</span>
+            <span class="info-value">chrome.storage.local</span>
+          </div>
+          <div class="setting-row">
+            <p class="privacy-note">SmartPaste Pro operates 100% locally in your browser. No personal data is sent to external servers. Passwords and credentials are never stored.</p>
+          </div>
         </div>
       </section>
 

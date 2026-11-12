@@ -1777,8 +1777,33 @@ function updateTypingCharCount() {
   const text = ta ? ta.value : '';
   if ($('typingCharCount')) $('typingCharCount').textContent = text.length;
   if ($('typingWordCountDisplay')) {
-    $('typingWordCountDisplay').textContent = text.trim().split(/\s+/).filter(Boolean).length;
+    const words = text.trim() ? text.trim().split(/\s+/).filter(Boolean).length : 0;
+    $('typingWordCountDisplay').textContent = `${words} words`;
   }
+}
+
+function renderCustomClipPickerList(items, filter = '') {
+  const listEl = $('clipPickerList');
+  if (!listEl) return;
+  const filtered = filter
+    ? items.filter((i) => (i.text || '').toLowerCase().includes(filter.toLowerCase()) || (i.category || '').toLowerCase().includes(filter.toLowerCase()))
+    : items;
+  if (!filtered || filtered.length === 0) {
+    listEl.innerHTML = '<div class="clip-picker-empty">No matching clips found</div>';
+    return;
+  }
+  listEl.innerHTML = filtered
+    .map(
+      (item) => `
+    <div class="clip-picker-item" data-id="${escapeHtml(item.id)}">
+      <div class="clip-picker-item-left">
+        <span class="clip-picker-badge badge-${escapeHtml(item.category || 'text')}">${escapeHtml((item.category || 'text').toUpperCase())}</span>
+        <span class="clip-picker-item-text">${escapeHtml(truncate(item.text, 44))}</span>
+      </div>
+      <div class="clip-picker-item-meta">${item.wordCount || 0}w</div>
+    </div>`
+    )
+    .join('');
 }
 
 function loadTypingDefaults() {
@@ -1802,18 +1827,21 @@ function loadTypingDefaults() {
 
 async function loadSavedItemsIntoTypingSelector() {
   const sel = $('savedClipSelector');
-  if (!sel) return;
   try {
     const res = await sendBG('getClipboardHistory', { filters: {} });
     if (!res || !res.success || !res.items) return;
     clipboardItems = res.items;
-    
-    sel.innerHTML = '<option value="">Load from Saved Clipboard Items...</option>' +
-      res.items.map(item => `
-        <option value="${escapeHtml(item.id)}">
-          [${escapeHtml(item.category)}] ${escapeHtml(truncate(item.text, 40))} (${item.wordCount || 0}w)
-        </option>
-      `).join('');
+
+    if (sel) {
+      sel.innerHTML = '<option value="">Load from Saved Clipboard Items...</option>' +
+        res.items.map(item => `
+          <option value="${escapeHtml(item.id)}">
+            [${escapeHtml(item.category)}] ${escapeHtml(truncate(item.text, 40))} (${item.wordCount || 0}w)
+          </option>
+        `).join('');
+    }
+
+    renderCustomClipPickerList(clipboardItems);
   } catch (err) {
     console.error('Failed to populate saved items selector:', err);
   }
@@ -2029,7 +2057,59 @@ function initTyping() {
     });
   });
 
-  // Saved Clipboard Item loader
+  // Custom Luxury Clip Picker Events
+  const pickerTrigger = $('clipPickerTrigger');
+  const pickerDropdown = $('clipPickerDropdown');
+  const pickerSearch = $('clipPickerSearch');
+  const pickerList = $('clipPickerList');
+
+  pickerTrigger?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = pickerDropdown && pickerDropdown.style.display !== 'none';
+    if (pickerDropdown) pickerDropdown.style.display = isOpen ? 'none' : 'block';
+    pickerTrigger.classList.toggle('open', !isOpen);
+    if (!isOpen && pickerSearch) {
+      pickerSearch.value = '';
+      renderCustomClipPickerList(clipboardItems);
+      setTimeout(() => pickerSearch.focus(), 50);
+    }
+  });
+
+  pickerSearch?.addEventListener('input', (e) => {
+    renderCustomClipPickerList(clipboardItems, e.target.value.trim());
+  });
+
+  pickerList?.addEventListener('click', (e) => {
+    const itemEl = e.target.closest('.clip-picker-item');
+    if (!itemEl) return;
+    const chosenId = itemEl.dataset.id;
+    const item = clipboardItems.find((i) => i.id === chosenId);
+    if (item) {
+      if ($('typingText')) {
+        $('typingText').value = item.text;
+        updateTypingCharCount();
+      }
+      if ($('clipPickerSelectedText')) {
+        $('clipPickerSelectedText').textContent = truncate(item.text, 36);
+      }
+      if ($('savedClipSelector')) {
+        $('savedClipSelector').value = item.id;
+      }
+      if (pickerDropdown) pickerDropdown.style.display = 'none';
+      pickerTrigger?.classList.remove('open');
+      showToast('Loaded saved clip into Typing Engine!', 'success');
+    }
+  });
+
+  // Close custom picker on outside click
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#customClipPicker')) {
+      if (pickerDropdown) pickerDropdown.style.display = 'none';
+      pickerTrigger?.classList.remove('open');
+    }
+  });
+
+  // Saved Clipboard Item loader (native fallback)
   $('savedClipSelector')?.addEventListener('change', (e) => {
     const chosenId = e.target.value;
     if (!chosenId) return;
@@ -2038,6 +2118,9 @@ function initTyping() {
       if ($('typingText')) {
         $('typingText').value = item.text;
         updateTypingCharCount();
+      }
+      if ($('clipPickerSelectedText')) {
+        $('clipPickerSelectedText').textContent = truncate(item.text, 36);
       }
       showToast('Loaded saved text into editor.', 'info');
     }

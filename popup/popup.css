@@ -404,10 +404,29 @@ body::-webkit-scrollbar {
   justify-content: space-between;
 }
 
-/* ─── Settings Groups & Rows (High-End Inset Architecture) ─────────────────── */
+/* ─── Apple iOS / macOS Inset Grouped Settings Architecture ────────────────── */
+.settings-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted);
+  margin: 14px 4px 6px 6px;
+}
+
+.settings-section-title:first-of-type {
+  margin-top: 4px;
+}
+
 .settings-group {
   display: flex;
   flex-direction: column;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+  margin-bottom: 12px;
 }
 
 .setting-row {
@@ -415,17 +434,23 @@ body::-webkit-scrollbar {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 10px 0;
+  padding: 12px 14px;
   border-bottom: 1px solid var(--card-border);
+  transition: background var(--transition);
 }
 
-.setting-row:first-child {
-  padding-top: 2px;
+.setting-row:hover {
+  background: var(--surface-hover);
 }
 
 .setting-row:last-child {
   border-bottom: none;
-  padding-bottom: 2px;
+}
+
+.setting-row--block {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
 }
 
 .setting-info {
@@ -445,6 +470,37 @@ body::-webkit-scrollbar {
   color: var(--text-muted);
   margin-top: 2px;
   line-height: 1.35;
+}
+
+.settings-save-wrap {
+  margin: 16px 0 14px 0;
+}
+
+.settings-group.app-info .setting-row {
+  padding: 8px 14px;
+  font-size: 11.5px;
+}
+
+.settings-group.app-info .info-label {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.settings-group.app-info .info-value {
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+}
+
+.settings-group.app-info .privacy-note {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  line-height: 1.45;
+  margin: 0;
+  border-top: none;
+  padding: 2px 0;
 }
 
 /* ─── HIDE UNWANTED CLUTTER ON DASHBOARD ───────────────────────────────────── */
@@ -2118,8 +2174,197 @@ body::-webkit-scrollbar {
   gap: 8px;
 }
 
-.saved-loader-wrap {
+/* ─── Custom Luxury Clip Picker Dropdown ───────────────────────────────────── */
+.custom-clip-picker {
+  position: relative;
   margin-bottom: 8px;
+}
+
+.clip-picker-trigger {
+  width: 100%;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  background: var(--surface);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+  text-align: left;
+}
+
+.clip-picker-trigger:hover {
+  background: var(--surface-hover);
+  border-color: var(--card-border-hover);
+  color: var(--text);
+}
+
+.clip-picker-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+.clip-picker-left svg {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.clip-picker-selected {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.clip-picker-arrow {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: transform var(--transition);
+}
+
+.clip-picker-trigger.open .clip-picker-arrow {
+  transform: rotate(180deg);
+  color: var(--primary);
+}
+
+.clip-picker-dropdown {
+  position: absolute;
+  top: 40px;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: var(--nav-bg);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--card-border-hover);
+  border-radius: var(--radius);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  animation: sectionFade 0.16s ease;
+}
+
+.clip-picker-search-wrap {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--card-border);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.clip-picker-search {
+  width: 100%;
+  height: 28px;
+  background: var(--surface);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  font-size: 11px;
+  color: var(--text);
+  outline: none;
+}
+
+.clip-picker-search:focus {
+  border-color: var(--primary);
+}
+
+.clip-picker-list {
+  max-height: 175px;
+  overflow-y: auto;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  scrollbar-width: thin;
+}
+
+.clip-picker-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  user-select: none;
+}
+
+.clip-picker-item:hover {
+  background: rgba(37, 99, 235, 0.15);
+  border-left: 2px solid #2563eb;
+}
+
+.clip-picker-item-left {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  overflow: hidden;
+  flex: 1;
+}
+
+.clip-picker-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  letter-spacing: 0.3px;
+}
+
+.badge-code {
+  background: rgba(37, 99, 235, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(37, 99, 235, 0.3);
+}
+
+.badge-question {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.badge-answer, .badge-ai {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge-text, .badge-general {
+  background: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.clip-picker-item-text {
+  font-size: 11px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+}
+
+.clip-picker-item-meta {
+  font-size: 9.5px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  font-weight: 500;
+}
+
+.clip-picker-empty {
+  padding: 14px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-muted);
 }
 
 .select--full {
@@ -2129,7 +2374,11 @@ body::-webkit-scrollbar {
 .typing-word-badge {
   font-size: 10px;
   color: var(--text-muted);
-  font-weight: 500;
+  font-weight: 600;
+  padding: 1px 7px;
+  background: var(--surface);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-full);
 }
 
 .typing-char-count {
