@@ -95,10 +95,10 @@
         <div class="card easy-flow-card">
           <div class="easy-flow-header">
             <div class="easy-flow-title">
-              <span class="easy-flow-badge">1-CLICK MAGIC</span>
-              <h3>Fast Auto Typer &amp; AI Solver</h3>
+              <span class="easy-flow-badge">PRO ENGINE</span>
+              <h3>Typing Command Center</h3>
             </div>
-            <span class="easy-flow-hint">3 simple steps to type into any site</span>
+            <span class="easy-flow-hint">Instant Paste &amp; Human Keystrokes</span>
           </div>
 
           <!-- STEP 1: INPUT -->
@@ -106,24 +106,24 @@
             <div class="easy-step-top">
               <div class="easy-step-label">
                 <span class="easy-step-num easy-step-num--1">1</span>
-                <span class="easy-step-heading">Get Text or Code</span>
+                <span class="easy-step-heading">Source Text / Code</span>
               </div>
               <div class="easy-step-tools">
                 <button type="button" class="btn-step-tool btn-step-tool--grab" id="easyGrabBtn" title="Grab question or selected text from webpage">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
                   </svg>
-                  <span>Grab Page Text</span>
+                  <span>Grab Web Text</span>
                 </button>
                 <button type="button" class="btn-step-tool btn-step-tool--paste" id="easyPasteClipBtn" title="Paste text from clipboard">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                   </svg>
-                  <span>Paste Clipboard</span>
+                  <span>Paste Clip</span>
                 </button>
               </div>
             </div>
-            <textarea class="textarea easy-flow-textarea" id="easyTextInput" placeholder="Paste your code, question, or problem statement here..." rows="3"></textarea>
+            <textarea class="textarea easy-flow-textarea" id="easyTextInput" placeholder="Paste code, problem statement, or text to type..." rows="3"></textarea>
           </div>
 
           <!-- STEP 2: AI (OPTIONAL) -->
@@ -131,10 +131,10 @@
             <div class="easy-step-top easy-step-toggle" id="easyAiToggleBtn" title="Click to show or hide AI Solver">
               <div class="easy-step-label">
                 <span class="easy-step-num easy-step-num--2">2</span>
-                <span class="easy-step-heading">Ask AI (Optional)</span>
+                <span class="easy-step-heading">AI Solver &amp; Fixer</span>
               </div>
               <div class="easy-step-right-tools">
-                <span class="easy-ai-status-pill" id="easyAiStatusPill">Click to open</span>
+                <span class="easy-ai-status-pill" id="easyAiStatusPill">Expand AI</span>
                 <svg class="easy-chevron" id="easyAiChevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <polyline points="6 9 12 15 18 9"/>
                 </svg>
@@ -154,10 +154,10 @@
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
                   </svg>
-                  <span>Solve Question / Fix Code</span>
+                  <span>Solve / Optimize Code</span>
                 </button>
                 <button type="button" class="btn-easy-ai-web" id="easyAiWebBtn" title="Open AI web portal in new tab">
-                  <span>Open Web AI</span>
+                  <span>Open Web</span>
                 </button>
               </div>
               <div class="easy-ai-key-inline" id="easyAiKeyInline" style="display:none">
@@ -182,7 +182,7 @@
             <div class="easy-step-top">
               <div class="easy-step-label">
                 <span class="easy-step-num easy-step-num--3 easy-step-num--glow">3</span>
-                <span class="easy-step-heading">Auto-Type into Webpage</span>
+                <span class="easy-step-heading">Execution &amp; Target</span>
               </div>
               <button type="button" class="btn-step-tool btn-step-tool--pick" id="easyPickTargetBtn" title="Click any input box or editor on the webpage to target it">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -195,6 +195,10 @@
             </div>
             <div class="easy-speed-selector">
               <span class="easy-speed-title">Speed:</span>
+              <button type="button" class="easy-speed-btn" data-speed="15000" data-mode="character">Max (15000 WPM)</button>
+              <button type="button" class="easy-speed-btn" data-speed="10000" data-mode="character">God (10000 WPM)</button>
+              <button type="button" class="easy-speed-btn" data-speed="7500" data-mode="character">Hyper (7500 WPM)</button>
+              <button type="button" class="easy-speed-btn" data-speed="5000" data-mode="character">Sonic (5000 WPM)</button>
               <button type="button" class="easy-speed-btn active" data-speed="2500" data-mode="character">Ultra (2500 WPM)</button>
               <button type="button" class="easy-speed-btn" data-speed="800" data-mode="character">Fast (800 WPM)</button>
               <button type="button" class="easy-speed-btn" data-speed="300" data-mode="character">Human (300 WPM)</button>
@@ -296,8 +300,7 @@
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-header">Quick Actions</div>
+        <div class="card quick-actions-card" id="quickActionsCard">
           <div class="quick-actions">
             <button class="action-btn action-btn--primary" id="qa-captureClipboard">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -333,9 +336,9 @@
             <span class="badge badge--code" id="activeAIProviderLabel">ChatGPT · Claude · Gemini</span>
           </div>
           <div class="ai-provider-selector">
-            <button type="button" class="ai-provider-pill active" data-ai-provider="chatgpt">ChatGPT</button>
+            <button type="button" class="ai-provider-pill active" data-ai-provider="gemini">Gemini</button>
+            <button type="button" class="ai-provider-pill" data-ai-provider="chatgpt">ChatGPT</button>
             <button type="button" class="ai-provider-pill" data-ai-provider="claude">Claude</button>
-            <button type="button" class="ai-provider-pill" data-ai-provider="gemini">Gemini</button>
           </div>
           <div class="ai-prompt-box">
             <textarea class="textarea ai-textarea" id="aiPrompt" placeholder="Ask AI to solve a question, summarize, or fix code..." rows="3"></textarea>
@@ -614,6 +617,10 @@
             <button type="button" class="preset-btn" data-preset="ultra">Ultra<span class="preset-val">500 WPM</span></button>
             <button type="button" class="preset-btn" data-preset="extreme">Extreme<span class="preset-val">1000 WPM</span></button>
             <button type="button" class="preset-btn" data-preset="turbo">Turbo<span class="preset-val">2500 WPM</span></button>
+            <button type="button" class="preset-btn" data-preset="sonic">Sonic<span class="preset-val">5000 WPM</span></button>
+            <button type="button" class="preset-btn" data-preset="hyper">Hyper<span class="preset-val">7500 WPM</span></button>
+            <button type="button" class="preset-btn" data-preset="god">God<span class="preset-val">10000 WPM</span></button>
+            <button type="button" class="preset-btn" data-preset="max">Max<span class="preset-val">15000 WPM</span></button>
             <button type="button" class="preset-btn preset-btn--instant" data-preset="instant">Instant<span class="preset-val">0 ms Delay</span></button>
           </div>
         </div>
@@ -668,10 +675,10 @@
             <div class="speed-row">
               <div class="setting-info">
                 <div class="setting-label">Speed (WPM)</div>
-                <div class="setting-desc">Words per minute (60 = normal human, 2500 = ultra fast)</div>
+                <div class="setting-desc">Words per minute (60 = normal human, 15000 = max speed)</div>
               </div>
               <div class="slider-container">
-                <input type="range" id="typingSpeedSlider" min="10" max="2500" step="10" value="60" class="slider">
+                <input type="range" id="typingSpeedSlider" min="10" max="15000" step="50" value="60" class="slider">
                 <span class="slider-value" id="typingSpeedValue">60</span>
               </div>
             </div>
@@ -874,9 +881,9 @@
             <div class="setting-row">
               <div class="setting-info">
                 <div class="setting-label">Default Speed (WPM)</div>
-                <div class="setting-desc">Default typing speed in words per minute (10–2500)</div>
+                <div class="setting-desc">Default typing speed in words per minute (10–15000)</div>
               </div>
-              <input type="number" class="input input--sm" id="settingTypingSpeed" value="60" min="10" max="2500" step="10">
+              <input type="number" class="input input--sm" id="settingTypingSpeed" value="60" min="10" max="15000" step="50">
             </div>
             <div class="setting-row">
               <div class="setting-info">

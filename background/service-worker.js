@@ -151,8 +151,12 @@ async function handleMessage(message, sender) {
       return clearAllData();
     case 'getStorageUsage':
       return getStorageUsage();
-    case 'callAI':
-      return handleAICall(message.provider, message.prompt, message.systemPrompt);
+    case 'generateAI':
+    case 'callAI': {
+      const res = await handleAICall(message.provider, message.prompt, message.systemPrompt);
+      if (res && res.reply && !res.text) res.text = res.reply;
+      return res;
+    }
     case 'openAIWeb':
       return openAIWeb(message.provider, message.text);
     default:
@@ -163,7 +167,11 @@ async function handleMessage(message, sender) {
 // ─── Settings ─────────────────────────────────────────────────────────────────
 async function getSettings() {
   const result = await chrome.storage.local.get(STORAGE_KEYS.SETTINGS);
-  return { success: true, settings: result[STORAGE_KEYS.SETTINGS] || DEFAULT_SETTINGS };
+  const settings = result[STORAGE_KEYS.SETTINGS] || { ...DEFAULT_SETTINGS };
+  if (!settings.apiKeys) {
+    settings.apiKeys = { ...DEFAULT_SETTINGS.apiKeys };
+  }
+  return { success: true, settings };
 }
 
 async function saveSettings(settings) {
@@ -506,6 +514,26 @@ function showNotification(message) {
 }
 
 // ─── AI Integrations: ChatGPT · Claude · Gemini ──────────────────────────────
+function formatProfessionalOutput(text) {
+  if (!text) return '';
+  let cleaned = text.trim();
+  
+  // If the output is enclosed in a markdown code fence, extract the code cleanly
+  const codeBlockMatch = cleaned.match(/^```(?:[a-zA-Z0-9_#+-]+)?\s*([\s\S]*?)```$/);
+  if (codeBlockMatch) {
+    cleaned = codeBlockMatch[1].trim();
+  }
+  
+  // Remove markdown bold and italic formatting asterisks: **text** -> text, *text* -> text
+  cleaned = cleaned.replace(/\*\*([^*]+)\*\*/g, '$1');
+  cleaned = cleaned.replace(/\*([^*\n]+)\*/g, '$1');
+  
+  // Remove markdown header hashes: ### Heading -> Heading
+  cleaned = cleaned.replace(/^#{1,6}\s+/gm, '');
+
+  return cleaned.trim();
+}
+
 async function handleAICall(provider, prompt, systemPrompt = '') {
   const settingsResult = await getSettings();
   const settings = settingsResult.settings || {};
@@ -514,6 +542,14 @@ async function handleAICall(provider, prompt, systemPrompt = '') {
   if (!prompt || !prompt.trim()) {
     return { success: false, error: 'Prompt cannot be empty.' };
   }
+
+  const defaultSystemPrompt = 
+    'You are a professional coding assistant and solution solver for an auto-typer. ' +
+    'Provide clean, production-ready, professional code or direct answers without conversational greetings (never say "Hi", "Hello", "Sure", etc.), ' +
+    'without conversational filler, disclaimers, or chit-chat, and without Markdown formatting asterisks (do not use **bold** or asterisks). ' +
+    'If code is requested, output clean, complete code directly ready to compile and run.';
+
+  const effectiveSystemPrompt = systemPrompt || defaultSystemPrompt;
 
   // 1. OpenAI (ChatGPT)
   if (provider === 'chatgpt') {
@@ -533,7 +569,7 @@ async function handleAICall(provider, prompt, systemPrompt = '') {
       body: JSON.stringify({
         model: settings.chatgptModel || 'gpt-4o-mini',
         messages: [
-          ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
+          { role: 'system', content: effectiveSystemPrompt },
           { role: 'user', content: prompt }
         ],
         temperature: 0.7
@@ -543,8 +579,9 @@ async function handleAICall(provider, prompt, systemPrompt = '') {
     if (!response.ok) {
       throw new Error(data.error?.message || `OpenAI error: HTTP ${response.status}`);
     }
-    const reply = data.choices?.[0]?.message?.content || '';
-    return { success: true, reply, provider: 'chatgpt' };
+    const rawReply = data.choices?.[0]?.message?.content || '';
+    const reply = formatProfessionalOutput(rawReply);
+    return { success: true, reply, text: reply, provider: 'chatgpt' };
   }
 
   // 2. Anthropic (Claude)
@@ -568,15 +605,16 @@ async function handleAICall(provider, prompt, systemPrompt = '') {
         model: settings.claudeModel || 'claude-3-5-haiku-20241022',
         max_tokens: 2000,
         messages: [{ role: 'user', content: prompt }],
-        ...(systemPrompt ? { system: systemPrompt } : {})
+        system: effectiveSystemPrompt
       })
     });
     const data = await response.json();
     if (!response.ok) {
       throw new Error(data.error?.message || `Claude error: HTTP ${response.status}`);
     }
-    const reply = data.content?.[0]?.text || '';
-    return { success: true, reply, provider: 'claude' };
+    const rawReply = data.content?.[0]?.text || '';
+    const reply = formatProfessionalOutput(rawReply);
+    return { success: true, reply, text: reply, provider: 'claude' };
   }
 
   // 3. Google Gemini
@@ -590,10 +628,12 @@ async function handleAICall(provider, prompt, systemPrompt = '') {
     }
     const candidateModels = [
       settings.geminiModel || 'gemini-2.5-flash',
+      'gemini-2.5-flash',
       'gemini-flash-latest',
-      'gemini-2.5-pro'
+      'gemini-2.5-pro',
+      'gemini-2.5-flash-lite'
     ];
-    const fullPrompt = systemPrompt ? `${systemPrompt}\n\nTask:\n${prompt}` : prompt;
+    const fullPrompt = `${effectiveSystemPrompt}\n\nTask:\n${prompt}`;
     let lastError = null;
 
     for (const model of candidateModels) {
@@ -608,8 +648,9 @@ async function handleAICall(provider, prompt, systemPrompt = '') {
         });
         const data = await response.json();
         if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
-          const reply = data.candidates[0].content.parts[0].text;
-          return { success: true, reply, provider: 'gemini', model };
+          const rawReply = data.candidates[0].content.parts[0].text;
+          const reply = formatProfessionalOutput(rawReply);
+          return { success: true, reply, text: reply, provider: 'gemini', model };
         }
         if (response.status !== 404) {
           throw new Error(data.error?.message || `Gemini error: HTTP ${response.status}`);

@@ -309,8 +309,8 @@ runTest('All mandatory project files are present and non-empty', () => {
 });
 
 // 11. Ultra Speed & Instant Mode Validation
-runTest('Typing Engine: Ultra-high speed (up to 2500 WPM) and Instant mode handling', () => {
-  const speeds = [60, 180, 500, 1000, 2500];
+runTest('Typing Engine: Ultra-high speed (up to 15000 WPM) and Instant mode handling', () => {
+  const speeds = [60, 180, 500, 1000, 2500, 5000, 7500, 10000, 15000];
   for (const s of speeds) {
     const fixedDelay = Math.max(0, Math.round(1000 / (s / 60)));
     assert.ok(fixedDelay >= 0);

@@ -409,10 +409,10 @@ async function startTyping(config) {
         await typeInstant(target, text);
         break;
       case 'character':
-        await typeByCharacter(target, text, baseDelay, minDelay, maxDelay, fixedSpeed);
+        await typeByCharacter(target, text, baseDelay, minDelay, maxDelay, fixedSpeed, speed);
         break;
       case 'word':
-        await typeByWord(target, text, baseDelay, minDelay, maxDelay, fixedSpeed);
+        await typeByWord(target, text, baseDelay, minDelay, maxDelay, fixedSpeed, speed);
         break;
       case 'line':
         await typeByLine(target, text, pauseDuration || 150);
@@ -443,8 +443,9 @@ async function typeInstant(target, text) {
   await sleep(10);
 }
 
-async function typeByCharacter(target, text, baseDelay, minDelay, maxDelay, fixedSpeed) {
-  const isUltraFast = (fixedSpeed && baseDelay <= 2) || (maxDelay <= 2);
+async function typeByCharacter(target, text, baseDelay, minDelay, maxDelay, fixedSpeed, speed = 0) {
+  const isUltraFast = (fixedSpeed && baseDelay <= 2) || (maxDelay <= 2) || speed >= 2500;
+  const burstSize = speed >= 12000 ? 6 : speed >= 8500 ? 4 : speed >= 6000 ? 3 : speed >= 4000 ? 2 : 1;
   
   for (let i = 0; i < text.length; i++) {
     if (state.typingAborted) break;
@@ -460,7 +461,11 @@ async function typeByCharacter(target, text, baseDelay, minDelay, maxDelay, fixe
     
     const delay = fixedSpeed ? baseDelay : randomDelay(Math.max(0, minDelay || 0), Math.max(0, maxDelay || 0));
     
-    if (delay > 0) {
+    if (speed >= 4000) {
+      if (i % burstSize === 0) {
+        await sleep(burstSize <= 2 ? 3 : 2);
+      }
+    } else if (delay > 0) {
       await sleep(delay);
     } else if (isUltraFast && i % 15 === 0) {
       await sleep(0); // Yield to keep UI responsive
@@ -472,9 +477,10 @@ async function typeByCharacter(target, text, baseDelay, minDelay, maxDelay, fixe
   }
 }
 
-async function typeByWord(target, text, baseDelay, minDelay, maxDelay, fixedSpeed) {
+async function typeByWord(target, text, baseDelay, minDelay, maxDelay, fixedSpeed, speed = 0) {
   const words = text.split(/(\s+)/); // Keep separators
-  const isUltraFast = (fixedSpeed && baseDelay <= 2) || (maxDelay <= 2);
+  const isUltraFast = (fixedSpeed && baseDelay <= 2) || (maxDelay <= 2) || speed >= 2500;
+  const burstSize = speed >= 8500 ? 3 : speed >= 4000 ? 2 : 1;
   
   for (let i = 0; i < words.length; i++) {
     if (state.typingAborted) break;
@@ -495,7 +501,11 @@ async function typeByWord(target, text, baseDelay, minDelay, maxDelay, fixedSpee
         Math.max(0, Math.round((maxDelay || 0) * Math.max(1, word.length * 0.7)))
       );
       
-    if (delay > 0) {
+    if (speed >= 4000) {
+      if (i % burstSize === 0) {
+        await sleep(2);
+      }
+    } else if (delay > 0) {
       await sleep(delay);
     } else if (isUltraFast && i % 8 === 0) {
       await sleep(0);

@@ -1,26 +1,29 @@
 .smartpaste-highlight {
-  outline: 3px solid #6c63ff !important;
-  box-shadow: 0 0 0 6px rgba(108, 99, 255, 0.15) !important;
-  transition: outline 0.2s ease, box-shadow 0.2s ease !important;
+  outline: 2px solid #2563eb !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2) !important;
+  transition: outline 0.16s ease, box-shadow 0.16s ease !important;
 }
 
 .smartpaste-toast {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
-  background: #1e1e2e;
-  color: #cdd6f4;
-  border: 1px solid #6c63ff;
+  bottom: 20px;
+  right: 20px;
+  background: rgba(15, 23, 42, 0.94);
+  color: #f8fafc;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
-  padding: 12px 20px;
-  font-family: system-ui, sans-serif;
-  font-size: 14px;
+  padding: 10px 16px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
   z-index: 2147483647;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.4);
-  animation: spp-slide-in 0.3s ease;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  animation: spp-slide-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes spp-slide-in {
-  from { transform: translateY(20px); opacity: 0; }
+  from { transform: translateY(12px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }

@@ -209,7 +209,7 @@ function initDashboard() {
 // ─── 1-Click Magic Workflow (Easy Flow) ──────────────────────────────────────
 let easySpeed = 2500;
 let easyMode = 'character';
-let easyAIProvider = 'chatgpt';
+let easyAIProvider = 'gemini';
 let easySyncInterval = null;
 
 function initEasyFlow() {
@@ -416,7 +416,9 @@ function initEasyFlow() {
   $('easyUseAiResultBtn')?.addEventListener('click', () => {
     const text = $('easyAiResultText')?.textContent.trim();
     if (text) {
-      $('easyTextInput').value = text;
+      // Remove any stray markdown formatting asterisks
+      const cleaned = text.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*\n]+)\*/g, '$1').replace(/^#{1,6}\s+/gm, '');
+      $('easyTextInput').value = cleaned;
       showToast('Loaded AI code into Auto-Typer! Click START AUTO-TYPING below.', 'success');
       $('easyStartTypingBtn')?.focus();
     }
@@ -426,7 +428,8 @@ function initEasyFlow() {
   $('easyCopyAiBtn')?.addEventListener('click', async () => {
     const text = $('easyAiResultText')?.textContent;
     if (text) {
-      await copyToClipboard(text);
+      const cleaned = text.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*\n]+)\*/g, '$1').replace(/^#{1,6}\s+/gm, '');
+      await copyToClipboard(cleaned.trim());
       showToast('AI solution copied to clipboard!', 'success');
     }
   });
@@ -603,16 +606,25 @@ function resetEasyTypingUI() {
 }
 
 // ─── AI Intelligence Hub (ChatGPT · Claude · Gemini) ─────────────────────────
-let currentAIProvider = 'chatgpt';
+let currentAIProvider = 'gemini';
 let lastAIResponse = '';
 
 function initAI() {
   $('headerAIBtn')?.addEventListener('click', () => {
     navigateTo('dashboard');
-    setTimeout(() => {
-      $('aiAssistantCard')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      $('aiPrompt')?.focus();
-    }, 120);
+    const aiCard = $('aiAssistantCard');
+    if (aiCard) {
+      const isHidden = window.getComputedStyle(aiCard).display === 'none';
+      if (isHidden) {
+        aiCard.classList.add('visible');
+        setTimeout(() => {
+          aiCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          $('aiPrompt')?.focus();
+        }, 80);
+      } else {
+        aiCard.classList.remove('visible');
+      }
+    }
   });
 
   // Provider pills
@@ -720,17 +732,31 @@ function initAI() {
   // AI Response Actions
   $('aiCopyBtn')?.addEventListener('click', async () => {
     if (!lastAIResponse) return;
-    await copyToClipboard(lastAIResponse);
+    await copyToClipboard(cleanForTyping(lastAIResponse));
     showToast('AI response copied!', 'success');
   });
 
+  function cleanForTyping(text) {
+    if (!text) return '';
+    let cleaned = text.trim();
+    const codeBlockMatch = cleaned.match(/^```(?:[a-zA-Z0-9_#+-]+)?\s*([\s\S]*?)```$/);
+    if (codeBlockMatch) {
+      cleaned = codeBlockMatch[1].trim();
+    }
+    cleaned = cleaned.replace(/\*\*([^*]+)\*\*/g, '$1');
+    cleaned = cleaned.replace(/\*([^*\n]+)\*/g, '$1');
+    cleaned = cleaned.replace(/^#{1,6}\s+/gm, '');
+    return cleaned.trim();
+  }
+
   $('aiSendToTypingBtn')?.addEventListener('click', () => {
     if (!lastAIResponse) return;
+    const cleanOutput = cleanForTyping(lastAIResponse);
     navigateTo('typing');
     setTimeout(() => {
       const ta = $('typingText');
       if (ta) {
-        ta.value = lastAIResponse;
+        ta.value = cleanOutput;
         updateTypingCharCount();
       }
       showToast('Loaded AI response into Typing Engine!', 'success');
@@ -1930,7 +1956,11 @@ function initTyping() {
     ultra: { speed: 500, min: 2, max: 10, mode: 'character', tag: 'Ultra 500 WPM' },
     extreme: { speed: 1000, min: 0, max: 3, mode: 'character', tag: 'Extreme 1000 WPM' },
     turbo: { speed: 2500, min: 0, max: 1, mode: 'character', tag: 'Turbo 2500 WPM' },
-    instant: { speed: 2500, min: 0, max: 0, mode: 'instant', tag: 'Instant (0 ms)' }
+    sonic: { speed: 5000, min: 0, max: 0, mode: 'character', tag: 'Sonic 5000 WPM' },
+    hyper: { speed: 7500, min: 0, max: 0, mode: 'character', tag: 'Hyper 7500 WPM' },
+    god: { speed: 10000, min: 0, max: 0, mode: 'character', tag: 'God 10000 WPM' },
+    max: { speed: 15000, min: 0, max: 0, mode: 'character', tag: 'Max 15000 WPM' },
+    instant: { speed: 15000, min: 0, max: 0, mode: 'instant', tag: 'Instant (0 ms)' }
   };
 
   $$('.preset-btn').forEach((btn) => {
