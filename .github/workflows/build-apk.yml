@@ -38,7 +38,6 @@ jobs:
           cp -r icons dist/
           cp mobile/index.html dist/index.html
           cp mobile/manifest.json dist/manifest.json
-          # Fix relative paths for dist root
           sed -i 's|\.\./popup/|popup/|g' dist/index.html || true
           sed -i 's|\.\./icons/|icons/|g' dist/manifest.json || true
 
@@ -49,15 +48,11 @@ jobs:
           npx cap init "SmartPaste Pro" "com.smartpaste.pro" --web-dir dist
           npx cap add android
           npx cap sync android
-
-          # Fix Kotlin stdlib-jdk7/jdk8 duplicate class collision in Gradle
-          cat << 'EOF' >> android/app/build.gradle
-
-configurations.all {
-    exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
-    exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
-}
-EOF
+          echo "" >> android/app/build.gradle
+          echo "configurations.all {" >> android/app/build.gradle
+          echo "    exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'" >> android/app/build.gradle
+          echo "    exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'" >> android/app/build.gradle
+          echo "}" >> android/app/build.gradle
 
       - name: Build Debug APK with Gradle
         working-directory: android
