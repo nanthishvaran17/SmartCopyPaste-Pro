@@ -166,25 +166,28 @@ async function loadDashboard() {
       }
     }
 
-    const clipResult = await sendBG('getClipboardHistory', { filters: { limit: 5 } });
+    const clipResult = await sendBG('getClipboardHistory', { filters: { limit: 4 } });
     const list = $('activityList');
     if (list) {
       if (clipResult && clipResult.success && clipResult.items && clipResult.items.length > 0) {
         list.innerHTML = clipResult.items
           .map(
             (item) => `
-          <div class="result-item">
-            <span style="flex:1;font-size:11px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-              ${escapeHtml(truncate(item.text, 45))}
-            </span>
-            <span style="font-size:10px;color:var(--text-muted);flex-shrink:0;">
-              ${formatDate(item.timestamp)}
-            </span>
+          <div class="recent-clip-pill" data-clip-text="${escapeHtml(item.text)}" title="Click to auto-type this clip">
+            <div class="recent-clip-body">
+              <span class="recent-clip-text">${escapeHtml(truncate(item.text, 55))}</span>
+              <span class="recent-clip-meta">${formatDate(item.timestamp)}</span>
+            </div>
+            <button type="button" class="recent-clip-load-btn" title="Load into Typer">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+            </button>
           </div>`
           )
           .join('');
       } else {
-        list.innerHTML = '<div class="empty-state">No recent activity yet. Capture text to get started!</div>';
+        list.innerHTML = '<div class="empty-state">No clips yet. Text you copy on web pages will appear here.</div>';
       }
     }
   } catch (err) {
@@ -193,6 +196,19 @@ async function loadDashboard() {
 }
 
 function initDashboard() {
+  $('activityList')?.addEventListener('click', (e) => {
+    const pill = e.target.closest('.recent-clip-pill');
+    if (pill && pill.dataset.clipText) {
+      const input = $('easyTextInput');
+      if (input) {
+        input.value = pill.dataset.clipText;
+        if (typeof updateEasyEditorStats === 'function') updateEasyEditorStats();
+        input.focus();
+        showToast('Clip loaded into Auto-Typer! Click START AUTO-TYPING', 'success');
+      }
+    }
+  });
+
   $('qa-captureClipboard')?.addEventListener('click', captureClipboard);
   $('qa-scanPage')?.addEventListener('click', () => {
     navigateTo('scanner');
@@ -212,6 +228,19 @@ let easyMode = 'character';
 let easyAIProvider = 'gemini';
 let easySyncInterval = null;
 
+function updateEasyEditorStats() {
+  const input = $('easyTextInput');
+  const val = input ? input.value : '';
+  const charCount = val.length;
+  const wordCount = val.trim() ? val.trim().split(/\s+/).length : 0;
+  if ($('easyCharCount')) {
+    $('easyCharCount').textContent = `${wordCount} words · ${charCount} chars`;
+  }
+  if ($('easyClearBtn')) {
+    $('easyClearBtn').style.display = charCount > 0 ? 'inline-flex' : 'none';
+  }
+}
+
 function initEasyFlow() {
   // Sync state immediately on popup open
   syncEasyTypingState();
@@ -220,13 +249,25 @@ function initEasyFlow() {
   chrome.storage.local.get(['easyDraftText'], (data) => {
     if (data && data.easyDraftText && $('easyTextInput') && !$('easyTextInput').value) {
       $('easyTextInput').value = data.easyDraftText;
+      updateEasyEditorStats();
     }
   });
 
   // Auto-save draft text whenever user types or pastes
   $('easyTextInput')?.addEventListener('input', () => {
     const val = $('easyTextInput').value;
+    updateEasyEditorStats();
     chrome.storage.local.set({ easyDraftText: val }).catch(() => {});
+  });
+
+  // Clear button
+  $('easyClearBtn')?.addEventListener('click', () => {
+    if ($('easyTextInput')) {
+      $('easyTextInput').value = '';
+      updateEasyEditorStats();
+      chrome.storage.local.remove('easyDraftText').catch(() => {});
+      $('easyTextInput').focus();
+    }
   });
 
   // Step 1: Grab text from webpage
@@ -239,6 +280,7 @@ function initEasyFlow() {
       const selRes = await sendContent(tab.id, { action: 'getSelectedText' }).catch(() => null);
       if (selRes && selRes.success && selRes.text && selRes.text.trim()) {
         $('easyTextInput').value = selRes.text.trim();
+        updateEasyEditorStats();
         showToast('Selected text grabbed from page!', 'success');
         return;
       }
@@ -253,10 +295,12 @@ function initEasyFlow() {
             qText += '\n' + q.options.map((o) => `${o.letter}. ${o.text}`).join('\n');
           }
           $('easyTextInput').value = qText;
+          updateEasyEditorStats();
           showToast('Question grabbed from page!', 'success');
           return;
         } else if (scanRes.data.codeBlocks && scanRes.data.codeBlocks.length > 0) {
           $('easyTextInput').value = scanRes.data.codeBlocks[0].code;
+          updateEasyEditorStats();
           showToast('Code block grabbed from page!', 'success');
           return;
         }
@@ -274,6 +318,7 @@ function initEasyFlow() {
       const text = await navigator.clipboard.readText();
       if (text && text.trim()) {
         $('easyTextInput').value = text.trim();
+        updateEasyEditorStats();
         showToast('Clipboard text loaded!', 'success');
       } else {
         showToast('Clipboard is empty', 'info');
@@ -419,6 +464,7 @@ function initEasyFlow() {
       // Remove any stray markdown formatting asterisks
       const cleaned = text.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/\*([^*\n]+)\*/g, '$1').replace(/^#{1,6}\s+/gm, '');
       $('easyTextInput').value = cleaned;
+      updateEasyEditorStats();
       showToast('Loaded AI code into Auto-Typer! Click START AUTO-TYPING below.', 'success');
       $('easyStartTypingBtn')?.focus();
     }
