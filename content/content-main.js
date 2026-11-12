@@ -880,3 +880,525 @@ function sleep(ms) {
 function randomDelay(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
+
+// ─── Exam Stealth Shield: Anti-Blur & Anti-Tab-Switch Detection ──────────────
+function initStealthExamShield() {
+  try {
+    // 1. Neutralize visibilityState and hidden property traps used by proctored tests
+    Object.defineProperty(document, 'visibilityState', {
+      get: () => 'visible',
+      configurable: true
+    });
+    Object.defineProperty(document, 'hidden', {
+      get: () => false,
+      configurable: true
+    });
+
+    // 2. Prevent synthetic visibilitychange events from notifying the test page
+    window.addEventListener('visibilitychange', (e) => {
+      if (document.visibilityState === 'visible') {
+        e.stopImmediatePropagation();
+      }
+    }, true);
+
+    // 3. Prevent blur event if interaction is happening within our stealth HUD
+    window.addEventListener('blur', (e) => {
+      const stealthHost = document.getElementById('smartpaste-stealth-host');
+      if (stealthHost && stealthHost.contains(document.activeElement)) {
+        e.stopImmediatePropagation();
+      }
+    }, true);
+  } catch (err) {
+    // Context or permission restricted, continue gracefully
+  }
+}
+initStealthExamShield();
+
+// ─── In-Page Fullscreen Stealth HUD ──────────────────────────────────────────
+let stealthHost = null;
+let stealthShadow = null;
+let stealthSelectedSpeed = 15000;
+let stealthLastSolution = '';
+
+function createStealthHUD() {
+  if (stealthHost) return;
+
+  stealthHost = document.createElement('div');
+  stealthHost.id = 'smartpaste-stealth-host';
+  stealthHost.style.cssText = [
+    'position: fixed',
+    'top: 60px',
+    'right: 28px',
+    'z-index: 2147483647',
+    'display: none',
+    'font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+  ].join(';');
+
+  stealthShadow = stealthHost.attachShadow({ mode: 'open' });
+
+  const style = document.createElement('style');
+  style.textContent = `
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    .hud-window {
+      width: 380px;
+      background: #0b0f19;
+      color: #e2e8f0;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.08);
+      font-size: 12px;
+      overflow: hidden;
+      animation: hudFadeIn 0.15s ease-out;
+    }
+    @keyframes hudFadeIn {
+      from { opacity: 0; transform: scale(0.97) translateY(-6px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .hud-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: #111827;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      cursor: grab;
+      user-select: none;
+    }
+    .hud-header:active { cursor: grabbing; }
+    .hud-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .hud-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+    }
+    .hud-title {
+      font-weight: 700;
+      font-size: 12px;
+      color: #f8fafc;
+      letter-spacing: -0.2px;
+    }
+    .hud-shortcut-badge {
+      font-size: 9.5px;
+      padding: 2px 6px;
+      background: rgba(255, 255, 255, 0.07);
+      border-radius: 4px;
+      color: #94a3b8;
+    }
+    .hud-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .hud-btn-mini {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #94a3b8;
+      border-radius: 5px;
+      padding: 3px 8px;
+      font-size: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.12s;
+    }
+    .hud-btn-mini:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #f1f5f9;
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    .hud-btn-panic {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: rgba(239, 68, 68, 0.35);
+      color: #f87171;
+    }
+    .hud-btn-panic:hover {
+      background: #ef4444;
+      color: #ffffff;
+      border-color: #ef4444;
+    }
+    .hud-body {
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 480px;
+      overflow-y: auto;
+    }
+    .hud-row-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .hud-btn-secondary {
+      flex: 1;
+      padding: 7px 10px;
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      color: #cbd5e1;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.12s;
+    }
+    .hud-btn-secondary:hover {
+      background: #334155;
+      color: #ffffff;
+    }
+    .hud-btn-primary {
+      flex: 1;
+      padding: 7px 10px;
+      background: #2563eb;
+      border: 1px solid #1d4ed8;
+      border-radius: 6px;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.12s;
+      box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
+    }
+    .hud-btn-primary:hover {
+      background: #1d4ed8;
+    }
+    .hud-btn-primary:disabled, .hud-btn-secondary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .hud-textarea {
+      width: 100%;
+      height: 70px;
+      background: #070a12;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 6px;
+      padding: 8px 10px;
+      color: #f1f5f9;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      resize: vertical;
+      outline: none;
+    }
+    .hud-textarea:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+    .hud-solution-box {
+      background: #070a12;
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      color: #34d399;
+      max-height: 120px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      display: none;
+    }
+    .hud-speeds-wrap {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .hud-speed-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #94a3b8;
+      margin-right: 2px;
+    }
+    .hud-speed-pill {
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+      border-radius: 4px;
+      padding: 3px 6px;
+      font-size: 9.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .hud-speed-pill:hover {
+      color: #ffffff;
+      background: #334155;
+    }
+    .hud-speed-pill.active {
+      background: #2563eb;
+      color: #ffffff;
+      border-color: #3b82f6;
+    }
+    .hud-type-btn {
+      width: 100%;
+      padding: 9px 12px;
+      background: #10b981;
+      border: 1px solid #059669;
+      border-radius: 6px;
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.12s;
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    }
+    .hud-type-btn:hover {
+      background: #059669;
+    }
+    .hud-type-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .hud-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #64748b;
+      padding-top: 4px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+  `;
+
+  const container = document.createElement('div');
+  container.className = 'hud-window';
+  container.innerHTML = `
+    <div class="hud-header" id="hudHeader">
+      <div class="hud-title-wrap">
+        <div class="hud-dot"></div>
+        <span class="hud-title" id="hudTitleText">SmartPaste Stealth</span>
+        <span class="hud-shortcut-badge">Alt+S</span>
+      </div>
+      <div class="hud-actions">
+        <button type="button" class="hud-btn-mini" id="hudCamouflageBtn" title="Camouflage title to look like dev console">Camo</button>
+        <button type="button" class="hud-btn-mini hud-btn-panic" id="hudPanicBtn" title="Instant Panic Hide (Esc / Alt+H)">Hide (Esc)</button>
+      </div>
+    </div>
+    <div class="hud-body">
+      <div class="hud-row-top">
+        <button type="button" class="hud-btn-secondary" id="hudGrabBtn">Grab Question</button>
+        <button type="button" class="hud-btn-primary" id="hudSolveBtn">Solve with Gemini</button>
+      </div>
+      <textarea class="hud-textarea" id="hudPromptInput" placeholder="Paste or grab question from the exam page..."></textarea>
+      <div class="hud-solution-box" id="hudSolutionBox"></div>
+      <div class="hud-speeds-wrap">
+        <span class="hud-speed-label">Speed:</span>
+        <button type="button" class="hud-speed-pill active" data-speed="15000">15000 WPM</button>
+        <button type="button" class="hud-speed-pill" data-speed="10000">10000</button>
+        <button type="button" class="hud-speed-pill" data-speed="5000">5000</button>
+        <button type="button" class="hud-speed-pill" data-speed="2500">2500</button>
+        <button type="button" class="hud-speed-pill" data-speed="instant">Instant</button>
+      </div>
+      <button type="button" class="hud-type-btn" id="hudStartTypeBtn">AUTO-TYPE INTO EXAM BOX</button>
+      <div class="hud-footer">
+        <span>Exam Shield: Active (Tab-blur protected)</span>
+        <span>Hide: Alt+H / Esc</span>
+      </div>
+    </div>
+  `;
+
+  stealthShadow.appendChild(style);
+  stealthShadow.appendChild(container);
+  document.documentElement.appendChild(stealthHost);
+
+  // Setup draggable header
+  let isDragging = false;
+  let dragOffsetX = 0;
+  let dragOffsetY = 0;
+  const header = stealthShadow.getElementById('hudHeader');
+
+  header.addEventListener('mousedown', (e) => {
+    if (e.target.closest('button')) return;
+    isDragging = true;
+    dragOffsetX = e.clientX - stealthHost.offsetLeft;
+    dragOffsetY = e.clientY - stealthHost.offsetTop;
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    const newX = Math.max(10, Math.min(window.innerWidth - 390, e.clientX - dragOffsetX));
+    const newY = Math.max(10, Math.min(window.innerHeight - 100, e.clientY - dragOffsetY));
+    stealthHost.style.right = 'auto';
+    stealthHost.style.left = `${newX}px`;
+    stealthHost.style.top = `${newY}px`;
+  });
+
+  document.addEventListener('mouseup', () => {
+    isDragging = false;
+  });
+
+  // Panic button
+  stealthShadow.getElementById('hudPanicBtn')?.addEventListener('click', hideStealthHUD);
+
+  // Camouflage title button
+  let isCamo = false;
+  stealthShadow.getElementById('hudCamouflageBtn')?.addEventListener('click', () => {
+    isCamo = !isCamo;
+    const title = stealthShadow.getElementById('hudTitleText');
+    if (title) {
+      title.textContent = isCamo ? 'Diagnostic Assistant' : 'SmartPaste Stealth';
+    }
+  });
+
+  // Grab button
+  stealthShadow.getElementById('hudGrabBtn')?.addEventListener('click', () => {
+    const promptInput = stealthShadow.getElementById('hudPromptInput');
+    // Priority 1: User selection
+    const selection = window.getSelection().toString().trim();
+    if (selection) {
+      if (promptInput) promptInput.value = selection;
+      return;
+    }
+    // Priority 2: Auto-scanned question or code block
+    const scan = scanPage();
+    if (scan.success && scan.data) {
+      if (scan.data.questions && scan.data.questions.length > 0) {
+        const q = scan.data.questions[0];
+        let qText = q.question;
+        if (q.options && q.options.length) {
+          qText += '\n' + q.options.map(o => `${o.letter}. ${o.text}`).join('\n');
+        }
+        if (promptInput) promptInput.value = qText;
+        return;
+      }
+      if (scan.data.codeBlocks && scan.data.codeBlocks.length > 0) {
+        if (promptInput) promptInput.value = scan.data.codeBlocks[0].code;
+        return;
+      }
+    }
+    alert('Please highlight / select the question text on page first, then click Grab!');
+  });
+
+  // Solve with Gemini AI
+  stealthShadow.getElementById('hudSolveBtn')?.addEventListener('click', async () => {
+    const promptInput = stealthShadow.getElementById('hudPromptInput');
+    const solveBtn = stealthShadow.getElementById('hudSolveBtn');
+    const solutionBox = stealthShadow.getElementById('hudSolutionBox');
+    const prompt = promptInput ? promptInput.value.trim() : '';
+
+    if (!prompt) {
+      alert('Please enter or grab a question first!');
+      return;
+    }
+
+    if (solveBtn) {
+      solveBtn.disabled = true;
+      solveBtn.textContent = 'Solving...';
+    }
+    if (solutionBox) {
+      solutionBox.style.display = 'block';
+      solutionBox.textContent = 'Connecting to Gemini AI...';
+    }
+
+    try {
+      const res = await chrome.runtime.sendMessage({
+        action: 'generateAI',
+        provider: 'gemini',
+        prompt: `Solve this question directly. Output only the clean, complete solution/code:\n\n${prompt}`
+      });
+
+      if (res && res.success && (res.reply || res.text)) {
+        stealthLastSolution = res.reply || res.text;
+        if (solutionBox) solutionBox.textContent = stealthLastSolution;
+      } else {
+        const err = res?.error || 'Failed to generate solution. Check Gemini API key in Settings.';
+        if (solutionBox) solutionBox.textContent = 'Error: ' + err;
+      }
+    } catch (err) {
+      if (solutionBox) solutionBox.textContent = 'Error: ' + err.message;
+    } finally {
+      if (solveBtn) {
+        solveBtn.disabled = false;
+        solveBtn.textContent = 'Solve with Gemini';
+      }
+    }
+  });
+
+  // Speed selector pills
+  stealthShadow.querySelectorAll('.hud-speed-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      stealthShadow.querySelectorAll('.hud-speed-pill').forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      const spd = pill.dataset.speed;
+      stealthSelectedSpeed = spd === 'instant' ? 15000 : parseInt(spd, 10);
+    });
+  });
+
+  // Auto-type button
+  stealthShadow.getElementById('hudStartTypeBtn')?.addEventListener('click', async () => {
+    const promptInput = stealthShadow.getElementById('hudPromptInput');
+    const textToType = stealthLastSolution || (promptInput ? promptInput.value.trim() : '');
+
+    if (!textToType) {
+      alert('No solution or text to type! Click Solve with Gemini first.');
+      return;
+    }
+
+    // Hide HUD during typing so screen is completely clear for invigilators
+    hideStealthHUD();
+
+    const isInstant = stealthSelectedSpeed >= 15000;
+    const config = {
+      text: textToType,
+      mode: isInstant ? 'instant' : 'character',
+      speed: stealthSelectedSpeed,
+      fixedSpeed: true,
+      minDelay: 0,
+      maxDelay: 0,
+      pauseDuration: 10
+    };
+
+    startTyping(config);
+  });
+}
+
+function showStealthHUD() {
+  if (!stealthHost) createStealthHUD();
+  if (stealthHost) {
+    stealthHost.style.display = 'block';
+  }
+}
+
+function hideStealthHUD() {
+  if (stealthHost) {
+    stealthHost.style.display = 'none';
+  }
+}
+
+function toggleStealthHUD() {
+  if (!stealthHost || stealthHost.style.display === 'none') {
+    showStealthHUD();
+  } else {
+    hideStealthHUD();
+  }
+}
+
+// Global stealth keyboard triggers:
+// 1. Alt + S  OR  Ctrl + Shift + S  -> Toggle In-Page Fullscreen Stealth HUD
+// 2. Alt + H  OR  Escape            -> Instant Panic Hide
+document.addEventListener('keydown', (e) => {
+  // Toggle HUD: Alt + S or Ctrl + Shift + S
+  if ((e.altKey && (e.key === 's' || e.key === 'S')) || (e.ctrlKey && e.shiftKey && (e.key === 'S' || e.key === 's'))) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    toggleStealthHUD();
+    return;
+  }
+
+  // Panic Hide: Alt + H or Escape (when HUD is open)
+  if ((e.altKey && (e.key === 'h' || e.key === 'H')) || (e.key === 'Escape' && stealthHost && stealthHost.style.display !== 'none')) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    hideStealthHUD();
+    return;
+  }
+}, true);
