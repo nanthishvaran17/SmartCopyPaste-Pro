@@ -305,32 +305,152 @@ function isNavElement(el) {
   return false;
 }
 
+// ─── Universal Element Resolver (Monaco, CodeMirror, Ace, RichText, React, Shadow DOM) ──
+function resolveEditableTarget(rawTarget) {
+  let el = rawTarget;
+  if (!el || el === document.body || el === document.documentElement) {
+    el = document.activeElement;
+  }
+  if (!el || el === document.body || el === document.documentElement) {
+    return null;
+  }
+
+  // 1. Monaco Editor (VS Code Web, HackerRank, LeetCode, CodeSignal, Replit)
+  const monacoContainer = el.closest ? el.closest('.monaco-editor') : null;
+  if (monacoContainer) {
+    const inputArea = monacoContainer.querySelector('textarea.inputarea');
+    if (inputArea) return inputArea;
+  }
+
+  // 2. CodeMirror 6 Editor
+  const cm6Container = el.closest ? el.closest('.cm-editor') : null;
+  if (cm6Container) {
+    const cmContent = cm6Container.querySelector('.cm-content[contenteditable="true"]');
+    if (cmContent) return cmContent;
+  }
+
+  // 3. CodeMirror 5 Editor
+  const cm5Container = el.closest ? el.closest('.CodeMirror') : null;
+  if (cm5Container) {
+    const cmTa = cm5Container.querySelector('textarea');
+    if (cmTa) return cmTa;
+  }
+
+  // 4. Ace Editor
+  const aceContainer = el.closest ? el.closest('.ace_editor') : null;
+  if (aceContainer) {
+    const aceTa = aceContainer.querySelector('textarea.ace_text-input') || aceContainer.querySelector('textarea');
+    if (aceTa) return aceTa;
+  }
+
+  // 5. Rich text editors: Quill, Summernote, Lexical, Slate, Draft.js, CKEditor
+  const richParent = el.closest ? el.closest('.ql-editor, .note-editable, [contenteditable="true"], [data-lexical-editor="true"], [data-slate-editor="true"], [role="textbox"]') : null;
+  if (richParent) return richParent;
+
+  // 6. Direct input/textarea/contenteditable
+  if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable || el.getAttribute('contenteditable') === 'true') {
+    return el;
+  }
+
+  // 7. Check if element has child inputs
+  if (el.querySelector) {
+    const child = el.querySelector('textarea, input:not([type="hidden"]), [contenteditable="true"]');
+    if (child) return child;
+  }
+
+  // 8. Shadow DOM check
+  if (el.shadowRoot) {
+    const shadowInput = el.shadowRoot.querySelector('textarea, input:not([type="hidden"]), [contenteditable="true"]');
+    if (shadowInput) return shadowInput;
+  }
+
+  return el;
+}
+
+function getAllEditableElements() {
+  const elements = [];
+
+  // Monaco
+  document.querySelectorAll('.monaco-editor').forEach(editor => {
+    const ta = editor.querySelector('textarea.inputarea');
+    if (ta && !elements.includes(ta)) elements.push(ta);
+  });
+
+  // CodeMirror 6
+  document.querySelectorAll('.cm-editor .cm-content[contenteditable="true"]').forEach(cm => {
+    if (!elements.includes(cm)) elements.push(cm);
+  });
+
+  // CodeMirror 5
+  document.querySelectorAll('.CodeMirror').forEach(cm => {
+    const ta = cm.querySelector('textarea');
+    if (ta && !elements.includes(ta)) elements.push(ta);
+  });
+
+  // Ace
+  document.querySelectorAll('.ace_editor').forEach(ace => {
+    const ta = ace.querySelector('textarea.ace_text-input') || ace.querySelector('textarea');
+    if (ta && !elements.includes(ta)) elements.push(ta);
+  });
+
+  // Standard inputs, textareas, contenteditable
+  document.querySelectorAll('input:not([type="hidden"]):not([type="password"]):not([type="submit"]):not([type="button"]):not([type="checkbox"]):not([type="radio"]), textarea, [contenteditable="true"], [contenteditable=""], [role="textbox"]').forEach(el => {
+    if (el.disabled || el.readOnly) return;
+    if (!elements.includes(el)) elements.push(el);
+  });
+
+  return elements;
+}
+
 // ─── Input Field Detector ─────────────────────────────────────────────────────
 function detectInputFields() {
+  const elements = getAllEditableElements();
   const fields = [];
-  const inputs = document.querySelectorAll(
-    'input[type="text"], input[type="search"], input[type="email"], input:not([type]), textarea, [contenteditable="true"], [contenteditable=""]'
-  );
-  
-  inputs.forEach((el, idx) => {
-    // Skip hidden, disabled, readonly, password fields
-    if (el.type === 'password' || el.disabled || el.readOnly) return;
+
+  elements.forEach((el, idx) => {
     const rect = el.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) return; // Hidden
-    if (rect.top < 0 || rect.top > window.innerHeight) return; // Off screen
-    
+    const displayRect = (rect.width <= 1 || rect.height <= 1) && el.parentElement 
+      ? el.parentElement.getBoundingClientRect() 
+      : rect;
+
+    let tag = el.tagName.toLowerCase();
+    let typeName = el.type || 'text';
+    let placeholder = el.placeholder || el.getAttribute('aria-label') || '';
+
+    if (el.closest && el.closest('.monaco-editor')) {
+      tag = 'monaco';
+      typeName = 'Monaco Code Editor';
+      placeholder = placeholder || 'VS Code / HackerRank / LeetCode Editor';
+    } else if (el.closest && el.closest('.cm-editor, .CodeMirror')) {
+      tag = 'codemirror';
+      typeName = 'CodeMirror Editor';
+      placeholder = placeholder || 'CodeMirror Code Editor';
+    } else if (el.closest && el.closest('.ace_editor')) {
+      tag = 'ace';
+      typeName = 'Ace Editor';
+      placeholder = placeholder || 'Ace Code Editor';
+    } else if (el.isContentEditable || el.contentEditable === 'true') {
+      tag = 'rich-text';
+      typeName = 'ContentEditable / Rich Text';
+    }
+
     fields.push({
       index: idx,
-      tag: el.tagName.toLowerCase(),
-      type: el.type || 'contenteditable',
-      placeholder: el.placeholder || el.getAttribute('aria-label') || '',
+      tag,
+      type: typeName,
+      placeholder,
       id: el.id || '',
       name: el.name || '',
-      isContentEditable: el.contentEditable === 'true' || el.contentEditable === '',
-      rect: { top: Math.round(rect.top), left: Math.round(rect.left), width: Math.round(rect.width), height: Math.round(rect.height) }
+      isContentEditable: el.isContentEditable || el.contentEditable === 'true',
+      rect: {
+        top: Math.round(displayRect.top),
+        left: Math.round(displayRect.left),
+        width: Math.round(displayRect.width || 300),
+        height: Math.round(displayRect.height || 40)
+      }
     });
   });
-  
+
   return { success: true, fields };
 }
 
@@ -347,41 +467,35 @@ async function startTyping(config) {
   }
   
   // Target resolution priority:
-  // 1. Explicitly chosen target via on-screen Target Picker
-  // 2. Currently active / focused element (e.g. Monaco / Ace editor, textarea)
+  // 1. Explicitly chosen target via on-screen Target Picker (resolved)
+  // 2. Currently active / focused element (resolved)
   // 3. User-specified targetIndex
   // 4. First detected interactive input field
-  let target = state.selectedTarget;
+  let target = resolveEditableTarget(state.selectedTarget);
 
   if (!target || !document.contains(target)) {
     const active = document.activeElement;
     if (active && active !== document.body && active !== document.documentElement) {
-      if (
-        active.tagName === 'INPUT' ||
-        active.tagName === 'TEXTAREA' ||
-        active.isContentEditable ||
-        active.getAttribute('contenteditable') === 'true' ||
-        active.closest('.monaco-editor, .ace_editor, .cm-editor, .CodeMirror')
-      ) {
-        target = active;
-      }
+      target = resolveEditableTarget(active);
+    }
+  }
+
+  if (!target && typeof targetIndex === 'number') {
+    const all = getAllEditableElements();
+    if (all[targetIndex]) {
+      target = resolveEditableTarget(all[targetIndex]);
     }
   }
 
   if (!target) {
-    const fields = detectInputFields().fields;
-    const allInputs = document.querySelectorAll(
-      'input[type="text"], input[type="search"], input[type="email"], input:not([type]), textarea, [contenteditable="true"], [contenteditable=""]'
-    );
-    if (targetIndex !== undefined && allInputs[targetIndex]) {
-      target = allInputs[targetIndex];
-    } else if (fields.length > 0 && allInputs[fields[0].index]) {
-      target = allInputs[fields[0].index];
+    const all = getAllEditableElements();
+    if (all.length > 0) {
+      target = resolveEditableTarget(all[0]);
     }
   }
 
   if (!target) {
-    return { success: false, error: 'No eligible input field found on this page.' };
+    return { success: false, error: 'No eligible input field found on this page. Click "Pick Box on Page" or click inside your editor first!' };
   }
   
   state.typingActive = true;
@@ -555,95 +669,192 @@ async function typeByParagraph(target, text, pauseDuration) {
   }
 }
 
-function insertChar(target, char) {
-  try { target.focus(); } catch (e) {}
-  
-  // Strategy 1: Universal execCommand (preserves editor internals for Monaco, Ace, CodeMirror)
-  let success = false;
+// ─── React Native Property Setter Bypass ──────────────────────────────────────
+function setNativeInputValue(element, value) {
   try {
-    success = document.execCommand('insertText', false, char);
-  } catch (err) {}
-  
-  if (success) return;
-
-  // Strategy 2: ContentEditable
-  if (target.isContentEditable || target.contentEditable === 'true') {
-    insertContentEditableText(char);
-    return;
-  }
-
-  // Strategy 3: Standard text field
-  try {
-    if (typeof target.selectionStart === 'number') {
-      const start = target.selectionStart;
-      const end = target.selectionEnd;
-      const val = target.value || '';
-      target.value = val.substring(0, start) + char + val.substring(end);
-      target.selectionStart = target.selectionEnd = start + 1;
-      target.dispatchEvent(new Event('input', { bubbles: true }));
-      target.dispatchEvent(new Event('change', { bubbles: true }));
-      return;
+    const prototype = Object.getPrototypeOf(element);
+    const descriptor = Object.getOwnPropertyDescriptor(prototype, 'value') ||
+                       Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value') ||
+                       Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value');
+    if (descriptor && descriptor.set) {
+      descriptor.set.call(element, value);
+    } else {
+      element.value = value;
     }
-  } catch (err) {}
+  } catch (e) {
+    element.value = value;
+  }
+}
 
-  // Strategy 4: Direct append fallback
+// ─── Simulated Realistic Key Events ───────────────────────────────────────────
+function dispatchSimulatedKeyEvent(target, char, type) {
   try {
-    target.value = (target.value || '') + char;
-    target.dispatchEvent(new Event('input', { bubbles: true }));
+    const keyCode = char === '\n' ? 13 : (char === '\t' ? 9 : (char.charCodeAt(0) || 0));
+    const key = char === '\n' ? 'Enter' : (char === '\t' ? 'Tab' : char);
+    const code = char === '\n' ? 'Enter' : (char === '\t' ? 'Tab' : (char === ' ' ? 'Space' : `Key${char.toUpperCase()}`));
+    const evt = new KeyboardEvent(type, {
+      key,
+      code,
+      keyCode,
+      which: keyCode,
+      charCode: type === 'keypress' ? keyCode : 0,
+      bubbles: true,
+      cancelable: true,
+      composed: true
+    });
+    target.dispatchEvent(evt);
   } catch (e) {}
 }
 
-function insertText(target, text) {
-  try { target.focus(); } catch (e) {}
-  
-  // Strategy 1: Universal execCommand
-  let success = false;
-  try {
-    success = document.execCommand('insertText', false, text);
-  } catch (err) {}
-  
-  if (success) return;
+// ─── Universal High-Compatibility Text Inserter ────────────────────────────────
+function insertUniversalText(rawTarget, text, isSingleChar = false) {
+  const target = resolveEditableTarget(rawTarget);
+  if (!target) return false;
 
-  // Strategy 2: ContentEditable
-  if (target.isContentEditable || target.contentEditable === 'true') {
-    insertContentEditableText(text);
-    return;
+  try { target.focus(); } catch (e) {}
+
+  // 1. CodeMirror 5 instance API
+  const cmInstance = target.CodeMirror || (target.closest && target.closest('.CodeMirror')?.CodeMirror);
+  if (cmInstance && typeof cmInstance.replaceSelection === 'function') {
+    cmInstance.replaceSelection(text);
+    return true;
   }
 
-  // Strategy 3: Standard text field
+  // 2. Ace Editor instance API
+  const aceEditor = (target.closest && target.closest('.ace_editor')?.env?.editor) || target.env?.editor;
+  if (aceEditor && typeof aceEditor.insert === 'function') {
+    aceEditor.insert(text);
+    return true;
+  }
+
+  // 3. Dispatch simulated keydown & keypress for single keystroke emulation
+  if (isSingleChar && text.length === 1) {
+    dispatchSimulatedKeyEvent(target, text, 'keydown');
+    dispatchSimulatedKeyEvent(target, text, 'keypress');
+  }
+
+  // 4. Strategy A: document.execCommand('insertText') (Monaco, Ace, CodeMirror 6, Google Docs)
+  let execSuccess = false;
   try {
-    if (typeof target.selectionStart === 'number') {
-      const start = target.selectionStart;
-      const end = target.selectionEnd;
-      const val = target.value || '';
-      target.value = val.substring(0, start) + text + val.substring(end);
-      target.selectionStart = target.selectionEnd = start + text.length;
-      target.dispatchEvent(new Event('input', { bubbles: true }));
-      target.dispatchEvent(new Event('change', { bubbles: true }));
-      return;
-    }
+    execSuccess = document.execCommand('insertText', false, text);
   } catch (err) {}
 
-  // Strategy 4: Direct append fallback
+  if (execSuccess) {
+    if (isSingleChar && text.length === 1) {
+      dispatchSimulatedKeyEvent(target, text, 'keyup');
+    }
+    return true;
+  }
+
+  // 5. Strategy B: ContentEditable Range Insertion
+  const isContentEditable = target.isContentEditable || target.getAttribute('contenteditable') === 'true' || target.contentEditable === 'true';
+  if (isContentEditable) {
+    insertContentEditableRange(target, text);
+    if (isSingleChar && text.length === 1) {
+      dispatchSimulatedKeyEvent(target, text, 'keyup');
+    }
+    return true;
+  }
+
+  // 6. Strategy C: Standard Input / Textarea with React Setter Bypass
+  if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || typeof target.value !== 'undefined') {
+    try {
+      const start = typeof target.selectionStart === 'number' ? target.selectionStart : (target.value ? target.value.length : 0);
+      const end = typeof target.selectionEnd === 'number' ? target.selectionEnd : (target.value ? target.value.length : 0);
+      const currentVal = target.value || '';
+      const newVal = currentVal.substring(0, start) + text + currentVal.substring(end);
+
+      setNativeInputValue(target, newVal);
+      target.selectionStart = target.selectionEnd = start + text.length;
+
+      try {
+        const inputEvt = new InputEvent('input', {
+          bubbles: true,
+          cancelable: true,
+          inputType: 'insertText',
+          data: text
+        });
+        target.dispatchEvent(inputEvt);
+      } catch (e) {
+        target.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      target.dispatchEvent(new Event('change', { bubbles: true }));
+
+      if (isSingleChar && text.length === 1) {
+        dispatchSimulatedKeyEvent(target, text, 'keyup');
+      }
+      return true;
+    } catch (e) {}
+  }
+
+  // 7. Strategy D: Direct Append Fallback
   try {
     target.value = (target.value || '') + text;
     target.dispatchEvent(new Event('input', { bubbles: true }));
   } catch (e) {}
+
+  if (isSingleChar && text.length === 1) {
+    dispatchSimulatedKeyEvent(target, text, 'keyup');
+  }
+  return true;
 }
 
-function insertContentEditableText(text) {
-  const selection = window.getSelection();
-  if (!selection.rangeCount) return;
-  const range = selection.getRangeAt(0);
-  range.deleteContents();
-  const node = document.createTextNode(text);
-  range.insertNode(node);
-  range.setStartAfter(node);
-  range.setEndAfter(node);
-  selection.removeAllRanges();
-  selection.addRange(range);
-  if (state.targetField) {
-    state.targetField.dispatchEvent(new Event('input', { bubbles: true }));
+function insertChar(target, char) {
+  insertUniversalText(target, char, true);
+}
+
+function insertText(target, text) {
+  insertUniversalText(target, text, false);
+}
+
+function insertContentEditableRange(target, text) {
+  try {
+    target.focus();
+    let sel = window.getSelection();
+    if (!sel || !sel.rangeCount) {
+      const range = document.createRange();
+      range.selectNodeContents(target);
+      range.collapse(false);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+    const range = sel.getRangeAt(0);
+    range.deleteContents();
+
+    const lines = text.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].length > 0) {
+        const textNode = document.createTextNode(lines[i]);
+        range.insertNode(textNode);
+        range.setStartAfter(textNode);
+        range.setEndAfter(textNode);
+      }
+      if (i < lines.length - 1) {
+        const br = document.createElement('br');
+        range.insertNode(br);
+        range.setStartAfter(br);
+        range.setEndAfter(br);
+      }
+    }
+    sel.removeAllRanges();
+    sel.addRange(range);
+
+    try {
+      target.dispatchEvent(new InputEvent('input', {
+        bubbles: true,
+        cancelable: true,
+        inputType: 'insertText',
+        data: text
+      }));
+    } catch (e) {
+      target.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    target.dispatchEvent(new Event('change', { bubbles: true }));
+  } catch (err) {
+    try {
+      target.innerText = (target.innerText || '') + text;
+      target.dispatchEvent(new Event('input', { bubbles: true }));
+    } catch (e) {}
   }
 }
 
@@ -699,7 +910,8 @@ function startTargetPicker() {
     e.preventDefault();
     e.stopPropagation();
 
-    state.selectedTarget = e.target;
+    const resolved = resolveEditableTarget(e.target);
+    state.selectedTarget = resolved || e.target;
     if (hoveredPickerEl) hoveredPickerEl.style.outline = '3px solid #10b981';
 
     toast.style.background = '#065f46';
@@ -912,6 +1124,33 @@ function initStealthExamShield() {
         e.stopImmediatePropagation();
       }
     }, true);
+
+    // 4. Universal Anti-Paste & Anti-Copy Unblocker (Bypasses paste/copy/right-click blocks on exam sites)
+    const unblockEvents = ['paste', 'copy', 'cut', 'contextmenu', 'selectstart', 'dragstart', 'drop'];
+    unblockEvents.forEach(evtName => {
+      window.addEventListener(evtName, (e) => {
+        // Prevent anti-cheat scripts from stopping copy/paste events
+        e.stopImmediatePropagation = () => {};
+      }, true);
+    });
+
+    // Remove inline event blockers on all inputs and body
+    const removeInlineBlockers = () => {
+      try {
+        document.querySelectorAll('*[onpaste], *[oncopy], *[oncut], *[oncontextmenu], *[ondrop], *[onselectstart]').forEach(el => {
+          el.onpaste = null;
+          el.oncopy = null;
+          el.oncut = null;
+          el.oncontextmenu = null;
+          el.ondrop = null;
+          el.onselectstart = null;
+        });
+      } catch (e) {}
+    };
+    removeInlineBlockers();
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', removeInlineBlockers);
+    }
   } catch (err) {
     // Context or permission restricted, continue gracefully
   }
