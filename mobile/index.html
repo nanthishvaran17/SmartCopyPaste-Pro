@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0e1117">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>SmartPaste Pro Mobile</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="../popup/popup.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 16px;
+      background: #0e1117;
+      color: #e6edf3;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    .mobile-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      margin-bottom: 16px;
+    }
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #58a6ff;
+    }
+    .badge {
+      background: rgba(56, 139, 253, 0.15);
+      color: #58a6ff;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      border: 1px solid rgba(56, 139, 253, 0.3);
+    }
+    .mobile-editor {
+      width: 100%;
+      height: 220px;
+      background: #161b22;
+      color: #f0f6fc;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 14px;
+      font-family: "SF Mono", Menlo, Consolas, monospace;
+      font-size: 13.5px;
+      line-height: 1.5;
+      box-sizing: border-box;
+      resize: vertical;
+      outline: none;
+    }
+    .mobile-editor:focus {
+      border-color: #58a6ff;
+    }
+    .action-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      margin-bottom: 16px;
+    }
+    .btn {
+      flex: 1;
+      padding: 10px 14px;
+      background: #21262d;
+      color: #c9d1d9;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.15s ease;
+    }
+    .btn:active {
+      background: #30363d;
+    }
+    .btn-primary {
+      background: #238636;
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+    .btn-primary:active {
+      background: #2ea043;
+    }
+    .section-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #8b949e;
+      margin: 18px 0 8px 0;
+    }
+    .pill-group {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .speed-pill {
+      flex: 1;
+      min-width: 78px;
+      padding: 8px 10px;
+      background: #161b22;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 9999px;
+      font-size: 0.78rem;
+      text-align: center;
+      color: #c9d1d9;
+      cursor: pointer;
+    }
+    .speed-pill.active {
+      background: #1f6feb;
+      color: #ffffff;
+      border-color: #58a6ff;
+    }
+    .dock-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .dock-card {
+      background: #161b22;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 10px 14px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .dock-text {
+      font-family: monospace;
+      font-size: 0.82rem;
+      color: #c9d1d9;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 80%;
+    }
+    .dock-tag {
+      font-size: 0.72rem;
+      color: #8b949e;
+    }
+    .stats-label {
+      font-size: 0.75rem;
+      color: #8b949e;
+      margin-top: 4px;
+    }
+    .toast-msg {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #238636;
+      color: #ffffff;
+      padding: 8px 18px;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      z-index: 9999;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="mobile-header">
+    <div class="brand-title">SmartPaste Pro</div>
+    <span class="badge">MOBILE PRO</span>
+  </header>
+
+  <div class="section-title">Source Text / Code</div>
+  <textarea id="mobileEditor" class="mobile-editor" placeholder="Paste your code or text here..."></textarea>
+  <div id="editorStats" class="stats-label">0 words | 0 characters | 0 lines</div>
+
+  <div class="action-row">
+    <button id="btnPaste" class="btn">Paste Device Clip</button>
+    <button id="btnCopy" class="btn btn-primary">Copy to Clipboard</button>
+    <button id="btnClear" class="btn">Clear</button>
+  </div>
+
+  <div class="section-title">Typing Speed Selector</div>
+  <div class="pill-group">
+    <div class="speed-pill active" data-speed="instant">Instant</div>
+    <div class="speed-pill" data-speed="ultra">Ultra 2.5k</div>
+    <div class="speed-pill" data-speed="fast">Fast 800</div>
+    <div class="speed-pill" data-speed="human">Human 300</div>
+  </div>
+
+  <div class="section-title">Recent Clips Dock</div>
+  <div id="dockContainer" class="dock-list"></div>
+
+  <div id="toast" class="toast-msg">Copied!</div>
+
+  <script>
+    'use strict';
+    const editor = document.getElementById('mobileEditor');
+    const stats = document.getElementById('editorStats');
+    const toast = document.getElementById('toast');
+    const dockContainer = document.getElementById('dockContainer');
+
+    let clips = JSON.parse(localStorage.getItem('smartpaste_clips') || '[]');
+    if (clips.length === 0) {
+      clips = [
+        "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        System.out.println(\"SmartPaste Mobile Active\");\n    }\n}",
+        "function solve() {\n  return 'Optimized Output';\n}"
+      ];
+      localStorage.setItem('smartpaste_clips', JSON.stringify(clips));
+    }
+
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.style.display = 'block';
+      setTimeout(() => { toast.style.display = 'none'; }, 2000);
+    }
+
+    function updateStats() {
+      const txt = editor.value;
+      const chars = txt.length;
+      const words = txt.trim() ? txt.trim().split(/\s+/).length : 0;
+      const lines = txt ? txt.split('\n').length : 0;
+      stats.textContent = `${words} words | ${chars} characters | ${lines} lines`;
+    }
+
+    function renderClips() {
+      dockContainer.innerHTML = '';
+      clips.forEach((c, idx) => {
+        const item = document.createElement('div');
+        item.className = 'dock-card';
+        const line = c.split('\n')[0].substring(0, 45);
+        item.innerHTML = `<span class="dock-text">${line}...</span><span class="dock-tag">${c.length} ch</span>`;
+        item.onclick = () => {
+          editor.value = c;
+          updateStats();
+          showToast('Clip loaded into editor');
+        };
+        dockContainer.appendChild(item);
+      });
+    }
+
+    function saveClip(text) {
+      if (!text || !text.trim()) return;
+      const trimmed = text.trim();
+      clips = clips.filter(c => c !== trimmed);
+      clips.unshift(trimmed);
+      if (clips.length > 20) clips.pop();
+      localStorage.setItem('smartpaste_clips', JSON.stringify(clips));
+      renderClips();
+    }
+
+    editor.addEventListener('input', updateStats);
+
+    document.getElementById('btnPaste').addEventListener('click', async () => {
+      try {
+        const t = await navigator.clipboard.readText();
+        if (t) {
+          editor.value = t;
+          updateStats();
+          saveClip(t);
+          showToast('Pasted from clipboard');
+        }
+      } catch (err) {
+        showToast('Clipboard access denied');
+      }
+    });
+
+    document.getElementById('btnCopy').addEventListener('click', async () => {
+      if (!editor.value) return;
+      try {
+        await navigator.clipboard.writeText(editor.value);
+        saveClip(editor.value);
+        showToast('Copied to clipboard');
+      } catch (err) {
+        showToast('Failed to copy');
+      }
+    });
+
+    document.getElementById('btnClear').addEventListener('click', () => {
+      editor.value = '';
+      updateStats();
+    });
+
+    document.querySelectorAll('.speed-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        document.querySelectorAll('.speed-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        showToast(`Speed: ${pill.textContent}`);
+      });
+    });
+
+    renderClips();
+    updateStats();
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>

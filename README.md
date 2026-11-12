@@ -175,6 +175,29 @@ SmartCopyPaste-Pro/
 
 ---
 
+## Desktop & Mobile Ecosystem
+
+SmartPaste Pro is engineered to run seamlessly across all your devices: Windows PCs, Android smartphones, tablets, and Chromium desktop browsers.
+
+### 1. Windows Desktop App (`SmartPastePro.exe`)
+A native, lightweight standalone desktop software compiled for Windows (no heavyweight electron or node runtimes required):
+- **Native OS Keystroke Emulation**: Uses Windows `SendKeys` and event hooks to automatically type or paste your code directly into **any open application** (VS Code, Notepad, Dev-C++, IntelliJ, Web Browsers, Discord, etc.).
+- **Focus Countdown**: Provides a configurable countdown delay (1-15 seconds) so you can switch into your target window before typing starts.
+- **Emergency Abort**: Press `ESC` or click `STOP` at any time to immediately kill active typing routines.
+- **1-Click Desktop Installer**: Run `Install-SmartPastePro.bat` to instantly generate an official shortcut on your Windows Desktop.
+- **Stand-alone Frameless Mode**: Launch the extension dashboard as an independent, frameless desktop window (`--app`) with zero browser toolbars.
+
+### 2. Android APK & Mobile Experience
+- **Automated Cloud APK Build**: Included `.github/workflows/build-apk.yml` uses GitHub Actions, JDK 17, and Capacitor Android to automatically compile `SmartPastePro-debug.apk` upon push or tag release. Download the ready-to-install `.apk` directly from GitHub Actions artifacts or Releases!
+- **Progressive Web App (PWA)**: Navigate to `mobile/index.html` on your Android phone/tablet in Chrome, Edge, or Samsung Internet, and tap **"Add to Home screen"** to install it as a full-screen, standalone app with offline caching.
+- **Kiwi / Lemur Mobile Browser**: On Android, install Kiwi Browser, navigate to `chrome://extensions`, enable Developer Mode, and load `SmartPastePro-Extension.zip` to enjoy the full extension popup directly on your mobile device.
+
+### 3. Chromium Extension Distribution (`SmartPastePro-Extension.zip`)
+- Pre-packaged ready-to-deploy zip archive containing all Manifest V3 assets, background service workers, and popup controls.
+- Compatible with Chrome, Edge, Brave, Opera, and Vivaldi.
+
+---
+
 ## Automated Verification Suite
 
 SmartPaste Pro includes a standalone test suite covering Manifest V3 integrity, input sanitization, question parsers, tokenization algorithms, speed matrices, and UI constraints:
