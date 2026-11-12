@@ -4,48 +4,46 @@
    ═══════════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  /* Signature Brand Accent (Modern Electric Cobalt) */
-  --primary: #2563eb;
-  --primary-hover: #1d4ed8;
-  --primary-glow: rgba(37, 99, 235, 0.22);
-  --accent-gradient: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-
-  /* Semantic Highlights */
-  --accent-cyan: #0284c7;
+  /* Signature Brand Accent (Electric Hyper Cobalt & Cyan Radiant Glow) */
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+  --primary-glow: rgba(59, 130, 246, 0.28);
+  --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  --accent-cyan: #06b6d4;
   --accent-emerald: #10b981;
   --accent-amber: #f59e0b;
-  --accent-rose: #ef4444;
+  --accent-rose: #f43f5e;
 
-  /* Typography & Geometry (Organic Squircles & Smooth Pills) */
-  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', -apple-system, system-ui, sans-serif;
-  --font-mono: 'SF Mono', 'JetBrains Mono', 'Fira Code', 'Roboto Mono', Menlo, monospace;
-  --radius-xs: 8px;
-  --radius-sm: 14px;
-  --radius: 20px;
-  --radius-lg: 24px;
+  /* Typography & Geometry (Linear & Raycast Inspired Micro Squircles) */
+  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius: 14px;
+  --radius-lg: 18px;
   --radius-full: 9999px;
-  --transition: 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  --transition: 0.16s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* ─── Dark Theme (Signature Obsidian Studio) ────────────────────────────────── */
+/* ─── Dark Theme (Elite Obsidian Studio) ────────────────────────────────── */
 [data-theme="dark"] {
-  --bg-base: #07080c;
-  --bg-gradient: radial-gradient(120% 120% at 50% 0%, #111524 0%, #07080c 100%);
-  --surface: rgba(18, 22, 34, 0.75);
-  --surface-hover: rgba(26, 32, 50, 0.9);
-  --surface-solid: #111420;
-  --card-bg: rgba(14, 18, 28, 0.85);
-  --card-border: rgba(255, 255, 255, 0.08);
-  --card-border-hover: rgba(255, 255, 255, 0.16);
-  --input-bg: #090b12;
+  --bg-base: #090b10;
+  --bg-gradient: radial-gradient(120% 120% at 50% -10%, #111726 0%, #07090e 100%);
+  --surface: rgba(18, 24, 38, 0.72);
+  --surface-hover: rgba(28, 36, 56, 0.85);
+  --surface-solid: #0f1422;
+  --card-bg: rgba(13, 17, 28, 0.85);
+  --card-border: rgba(255, 255, 255, 0.07);
+  --card-border-hover: rgba(59, 130, 246, 0.3);
+  --input-bg: rgba(7, 9, 15, 0.85);
   --input-border: rgba(255, 255, 255, 0.09);
-  --text: #f8fafc;
+  --text: #f1f5f9;
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
-  --nav-bg: rgba(14, 18, 28, 0.88);
+  --nav-bg: rgba(13, 17, 28, 0.92);
   --nav-border: rgba(255, 255, 255, 0.08);
-  --header-bg: #07080c;
-  --glass-shadow: 0 12px 36px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --header-bg: rgba(9, 11, 16, 0.95);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 /* ─── Light Theme (Crisp Studio Pearl Slate) ───────────────────────────────── */
@@ -256,17 +254,17 @@ body::-webkit-scrollbar {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   background: var(--nav-bg);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   border: 1px solid var(--nav-border);
-  border-radius: var(--radius-full);
-  height: 44px;
+  border-radius: var(--radius-sm);
+  height: 40px;
   flex-shrink: 0;
-  padding: 3px 6px;
+  padding: 3px;
   margin: 2px 14px 6px 14px;
-  gap: 4px;
+  gap: 3px;
   z-index: 9;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
 }
 
 .nav-btn {
@@ -274,28 +272,28 @@ body::-webkit-scrollbar {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  padding: 3px 2px;
+  gap: 1px;
+  padding: 2px;
   border: none;
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-xs);
   transition: all var(--transition);
   min-width: 0;
   width: 100%;
 }
 
 .nav-btn svg {
-  width: 15px;
-  height: 15px;
+  width: 14px;
+  height: 14px;
   transition: stroke var(--transition), transform var(--transition);
 }
 
 .nav-btn span {
   font-size: 9px;
   font-weight: 600;
-  letter-spacing: -0.2px;
+  letter-spacing: -0.1px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -309,9 +307,9 @@ body::-webkit-scrollbar {
 
 .nav-btn.active {
   color: #ffffff;
-  background: #2563eb;
-  border-radius: var(--radius-full);
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  border-radius: var(--radius-xs);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.45);
 }
 
 .nav-btn.active svg {
@@ -430,8 +428,8 @@ body::-webkit-scrollbar {
 }
 
 .setting-info {
-  flex: 1;
-  min-width: 0;
+  flex: 1 1 auto;
+  min-width: 170px;
 }
 
 .setting-label {
@@ -452,8 +450,7 @@ body::-webkit-scrollbar {
 .guide-card,
 .stats-grid,
 .quick-actions-card,
-#quickActionsCard,
-#recentActivity {
+#quickActionsCard {
   display: none !important;
 }
 
@@ -469,15 +466,12 @@ body::-webkit-scrollbar {
   animation: sectionFade 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* ─── Typing Command Center (Unified Pro Canvas) ───────────────────────────── */
+/* ─── Typing Command Center (Unified Pro Canvas - Zero Box Cage!) ──────────── */
 .easy-flow-card {
-  border: 1px solid rgba(37, 99, 235, 0.22);
-  border-radius: var(--radius);
-  background: var(--card-bg);
-  box-shadow: var(--glass-shadow);
-  position: relative;
-  overflow: hidden;
-  padding: 16px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
   margin-bottom: 8px;
 }
 
@@ -485,9 +479,8 @@ body::-webkit-scrollbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
-  border-bottom: 1px solid var(--card-border);
-  padding-bottom: 10px;
+  margin-bottom: 10px;
+  padding: 0 2px;
 }
 
 .easy-flow-title {
@@ -629,45 +622,97 @@ body::-webkit-scrollbar {
   color: var(--primary);
 }
 
-/* Editor Textarea (Rounded Squircle) */
-.easy-flow-textarea {
-  width: 100%;
-  min-height: 68px;
-  max-height: 120px;
-  font-size: 12px;
-  font-family: var(--font-mono);
-  resize: vertical;
-  background: var(--input-bg);
-  border: 1px solid var(--input-border);
-  border-radius: var(--radius-sm);
-  padding: 10px 12px;
-  color: var(--text);
-  box-sizing: border-box;
-  outline: none;
+/* ─── Step 1: Editor Studio Canvas (High-End Tactile Squircle) ─────────────── */
+.easy-step--editor-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  padding: 12px 14px 10px 14px;
+  margin-bottom: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
   transition: all var(--transition);
 }
 
-.easy-flow-textarea:focus {
+.easy-step--editor-card:focus-within {
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px var(--primary-glow);
-  background: rgba(12, 15, 24, 0.95);
+  box-shadow: 0 0 0 3px var(--primary-glow), 0 4px 20px rgba(37, 99, 235, 0.12);
 }
 
-/* Collapsible AI Pill Drawer */
+.easy-flow-textarea {
+  width: 100%;
+  min-height: 84px;
+  max-height: 130px;
+  font-size: 12.5px;
+  font-family: var(--font-mono);
+  resize: none;
+  background: transparent;
+  border: none;
+  padding: 6px 2px 8px 2px;
+  color: var(--text);
+  box-sizing: border-box;
+  outline: none;
+  line-height: 1.5;
+}
+
+.easy-flow-textarea::placeholder {
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+.editor-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 6px;
+  border-top: 1px solid var(--card-border);
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+
+.editor-live-status {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 500;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+  display: inline-block;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+}
+
+.editor-char-counter {
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+/* ─── Step 2: AI Drawer (Floating Capsule Pill) ────────────────────────────── */
+.easy-step--collapsible {
+  margin-bottom: 10px;
+}
+
 .easy-step-toggle {
   cursor: pointer;
   user-select: none;
   border-radius: var(--radius-full);
-  padding: 6px 12px;
-  background: var(--surface);
+  padding: 8px 14px;
+  background: var(--card-bg);
   border: 1px solid var(--card-border);
-  margin-bottom: 0 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   transition: all var(--transition);
 }
 
 .easy-step-toggle:hover {
   background: var(--surface-hover);
   border-color: var(--card-border-hover);
+  transform: translateY(-1px);
 }
 
 .easy-step-right-tools {
@@ -849,42 +894,58 @@ body::-webkit-scrollbar {
   padding-right: 4px;
 }
 
-/* Speed Selector Strip */
+/* Speed Selector Strip (Unified 4-Segment Capsule Dock) */
 .easy-speed-selector {
   display: flex;
   align-items: center;
-  gap: 5px;
-  margin-top: 8px;
-  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0 10px 0;
 }
 
 .easy-speed-title {
   font-size: 10.5px;
-  font-weight: 600;
-  color: var(--text-secondary);
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.easy-speed-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  flex: 1;
 }
 
 .easy-speed-btn {
-  padding: 4px 10px;
+  padding: 6px 4px;
   font-size: 10.5px;
   font-weight: 600;
+  text-align: center;
   border-radius: var(--radius-full);
   border: 1px solid var(--card-border);
   background: var(--surface);
   color: var(--text-secondary);
   cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
   transition: all var(--transition);
 }
 
 .easy-speed-btn:hover {
   color: var(--text);
   background: var(--surface-hover);
+  border-color: var(--card-border-hover);
 }
 
 .easy-speed-btn.active {
   background: #2563eb;
   color: #ffffff;
   border-color: #1d4ed8;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
 }
 
 .easy-speed-btn:active {
@@ -898,10 +959,10 @@ body::-webkit-scrollbar {
   margin-top: 10px;
 }
 
-/* Hero 46px Capsule Button */
+/* Hero 48px Organic Capsule Action Button */
 .btn-easy-start {
   flex: 1;
-  height: 46px;
+  height: 48px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -910,18 +971,18 @@ body::-webkit-scrollbar {
   color: #ffffff;
   border: none;
   border-radius: var(--radius-full);
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 700;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.5px;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25);
   transition: all var(--transition);
 }
 
 .btn-easy-start:hover {
-  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-  transform: translateY(-1.5px);
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.55);
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 26px rgba(37, 99, 235, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
 .btn-easy-start:active {
@@ -929,31 +990,143 @@ body::-webkit-scrollbar {
 }
 
 .btn-easy-stop {
-  height: 46px;
+  height: 48px;
   padding: 0 20px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  background: #dc2626;
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
   color: #ffffff;
   border: none;
   border-radius: var(--radius-full);
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 700;
   letter-spacing: 0.4px;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35);
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.4);
   transition: all var(--transition);
 }
 
 .btn-easy-stop:hover {
-  background: #b91c1c;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   transform: translateY(-1px);
 }
 
 .btn-easy-stop:active {
   transform: scale(0.97);
+}
+
+/* ─── Recent Clips & Quick Dock (Fills the Bottom Workspace) ──────────────── */
+.recent-activity-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 20px;
+  padding: 12px 14px;
+  margin-top: 12px;
+  margin-bottom: 6px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.03);
+}
+
+.recent-activity-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--card-border);
+}
+
+.recent-title-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.recent-hint {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--card-border);
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+}
+
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.recent-clip-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 10px;
+  background: var(--surface);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.recent-clip-pill:hover {
+  background: var(--surface-hover);
+  border-color: var(--card-border-hover);
+  transform: translateX(2px);
+}
+
+.recent-clip-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.recent-clip-text {
+  font-size: 11px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  font-family: var(--font-mono);
+}
+
+.recent-clip-meta {
+  font-size: 9.5px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.recent-clip-load-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.1);
+  color: #2563eb;
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.recent-clip-pill:hover .recent-clip-load-btn {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #1d4ed8;
 }
 
 .easy-progress-bar-wrap {
@@ -1097,14 +1270,7 @@ body::-webkit-scrollbar {
   font-family: var(--font-mono);
 }
 
-.input--key {
-  width: 160px;
-  height: 32px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  border-radius: var(--radius-full);
-  padding: 4px 12px;
-}
+/* .input--key defined below under inputs section */
 
 /* ─── Buttons (Fluid Pills) ────────────────────────────────────────────────── */
 .btn {
@@ -1233,6 +1399,17 @@ body::-webkit-scrollbar {
   font-weight: 600;
   font-size: 12px;
   border-radius: var(--radius-full);
+}
+
+.input--key {
+  width: 175px !important;
+  max-width: 175px !important;
+  flex: 0 0 175px !important;
+  height: 32px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  border-radius: var(--radius-full);
+  padding: 4px 12px;
 }
 
 .input:focus, .textarea:focus, .search-input:focus, .select-input:focus {
