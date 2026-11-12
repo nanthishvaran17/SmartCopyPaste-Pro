@@ -751,8 +751,19 @@ function insertUniversalText(rawTarget, text, isSingleChar = false) {
     return true;
   }
 
-  // 3. Dispatch simulated keydown & keypress for single keystroke emulation ONLY for standard text inputs (avoid code editor auto-brackets)
+  // 3. Main World direct insertion for code editors (Prevents auto-closing brackets and double braces)
   const isCodeEditor = !!(target.closest && (target.closest('.ace_editor') || target.closest('.CodeMirror') || target.closest('.monaco-editor') || target.closest('.cm-editor')));
+  if (isCodeEditor) {
+    try {
+      chrome.runtime.sendMessage({
+        action: 'mainWorldAction',
+        subAction: 'insertChunk',
+        chunk: text
+      }).catch(() => {});
+      return true;
+    } catch (e) {}
+  }
+
   if (isSingleChar && text.length === 1 && !isCodeEditor) {
     dispatchSimulatedKeyEvent(target, text, 'keydown');
     dispatchSimulatedKeyEvent(target, text, 'keypress');
@@ -1378,7 +1389,15 @@ function runInMainWorld(codeStr) {
 }
 
 function disableEditorAutoPairing(target) {
-  // 1. Run in main world so page Ace / CodeMirror instances disable auto-pairing
+  // 1. Primary: Use background service worker chrome.scripting (bypasses page CSP completely!)
+  try {
+    chrome.runtime.sendMessage({
+      action: 'mainWorldAction',
+      subAction: 'disableAutoPairing'
+    }).catch(() => {});
+  } catch (e) {}
+
+  // 2. DOM fallback
   runInMainWorld(`
     try {
       if (window.ace) {
@@ -1391,6 +1410,9 @@ function disableEditorAutoPairing(target) {
               }
               ed.setBehavioursEnabled(false);
               if (ed.setOption) {
+                ed.setOption('behavioursEnabled', false);
+                ed.setOption('wrapBehavioursEnabled', false);
+                ed.setOption('enableAutoIndent', false);
                 ed.setOption('enableBasicAutocompletion', false);
                 ed.setOption('enableLiveAutocompletion', false);
               }
@@ -1405,6 +1427,7 @@ function disableEditorAutoPairing(target) {
           try {
             if (el.CodeMirror && el.CodeMirror.setOption) {
               el.CodeMirror.setOption('autoCloseBrackets', false);
+              el.CodeMirror.setOption('matchBrackets', false);
             }
           } catch(e) {}
         });
@@ -1438,6 +1461,12 @@ function disableEditorAutoPairing(target) {
   } catch (e) {}
 
   return () => {
+    try {
+      chrome.runtime.sendMessage({
+        action: 'mainWorldAction',
+        subAction: 'restoreAutoPairing'
+      }).catch(() => {});
+    } catch (e) {}
     restores.forEach(r => r());
     runInMainWorld(`
       try {
@@ -1461,7 +1490,16 @@ function executeDeepCodePaste(target, code) {
   if (!code) return false;
   let cleanCode = code.replace(/^```[a-zA-Z0-9_-]*\s*\n?/m, '').replace(/\n?```\s*$/m, '').trim();
 
-  // 1. Attempt Main World injection into Ace, CodeMirror, or Monaco
+  // 1. Primary: Use background service worker chrome.scripting (bypasses page CSP completely!)
+  try {
+    chrome.runtime.sendMessage({
+      action: 'mainWorldAction',
+      subAction: 'pasteCode',
+      code: cleanCode
+    }).catch(() => {});
+  } catch (e) {}
+
+  // 2. Attempt Main World injection into Ace, CodeMirror, or Monaco via script tag
   try {
     const escapedCode = JSON.stringify(cleanCode);
     runInMainWorld(`
@@ -1517,7 +1555,7 @@ function executeDeepCodePaste(target, code) {
   if (!target) return true;
   try { target.focus(); } catch (e) {}
 
-  // 2. Direct Ace Editor API
+  // 3. Direct Ace Editor API
   try {
     const aceEditor = (target.closest && target.closest('.ace_editor')?.env?.editor) || 
                       (target.env?.editor) || 
@@ -1533,7 +1571,7 @@ function executeDeepCodePaste(target, code) {
     }
   } catch (e) {}
 
-  // 3. Direct CodeMirror API
+  // 4. Direct CodeMirror API
   try {
     const cm = target.CodeMirror || (target.closest && target.closest('.CodeMirror')?.CodeMirror);
     if (cm && typeof cm.setValue === 'function') {
@@ -1546,7 +1584,7 @@ function executeDeepCodePaste(target, code) {
     }
   } catch (e) {}
 
-  // 4. Monaco direct API
+  // 5. Monaco direct API
   try {
     if (window.monaco && window.monaco.editor) {
       const models = window.monaco.editor.getModels();
@@ -1557,7 +1595,7 @@ function executeDeepCodePaste(target, code) {
     }
   } catch (e) {}
 
-  // 5. Owner Document execCommand
+  // 6. Owner Document execCommand
   try {
     const doc = target.ownerDocument || document;
     if (target.select) target.select();
@@ -1571,7 +1609,7 @@ function executeDeepCodePaste(target, code) {
     }
   } catch (e) {}
 
-  // 6. Standard Textarea / Input with React Native Setter Bypass
+  // 7. Standard Textarea / Input with React Native Setter Bypass
   if (target.tagName === 'TEXTAREA' || target.tagName === 'INPUT' || typeof target.value !== 'undefined') {
     try {
       setNativeInputValue(target, cleanCode);
@@ -1591,7 +1629,7 @@ function executeDeepCodePaste(target, code) {
     } catch (e) {}
   }
 
-  // 7. ContentEditable Range Replacement
+  // 8. ContentEditable Range Replacement
   if (target.isContentEditable || target.getAttribute('contenteditable') === 'true') {
     try {
       insertContentEditableRange(target, cleanCode);
@@ -1599,7 +1637,7 @@ function executeDeepCodePaste(target, code) {
     } catch (e) {}
   }
 
-  return false;
+  return true;
 }
 
 function getTargetDisplayName(el) {
@@ -2351,6 +2389,14 @@ function createStealthHUD() {
 
     // Hide HUD during typing so screen is completely clear for invigilators
     hideStealthHUD();
+
+    // Ensure editor is clean and behaviours disabled before auto-typing
+    try {
+      chrome.runtime.sendMessage({
+        action: 'mainWorldAction',
+        subAction: 'clearEditor'
+      }).catch(() => {});
+    } catch (e) {}
 
     const isInstant = stealthSelectedMode === 'instant' || stealthSelectedSpeed >= 15000;
     if (isInstant) {

@@ -211,8 +211,248 @@ async function handleMessage(message, sender) {
     }
     case 'openAIWeb':
       return openAIWeb(message.provider, message.text);
+    case 'mainWorldAction':
+      return handleMainWorldAction(message, sender);
     default:
       throw new Error(`Unknown action: ${action}`);
+  }
+}
+
+// ─── Main World Scripting Bridge (Bypasses Page CSP for Pristine Code Injection) ─
+async function handleMainWorldAction(message, sender) {
+  const tabId = message.tabId || (sender && sender.tab ? sender.tab.id : null);
+  if (!tabId) return { success: false, error: 'No active tab ID available' };
+
+  try {
+    const { subAction, code, chunk } = message;
+
+    if (subAction === 'pasteCode') {
+      const results = await chrome.scripting.executeScript({
+        target: { tabId, allFrames: true },
+        world: 'MAIN',
+        func: (cleanCode) => {
+          let injected = false;
+          // 1. Ace Editor (Skillrack, Examly, Mercer Mettl, HackerEarth, etc.)
+          try {
+            if (window.ace) {
+              const aceList = document.querySelectorAll('.ace_editor');
+              if (aceList.length > 0) {
+                aceList.forEach(el => {
+                  try {
+                    const ed = el.env?.editor || (window.ace.edit && window.ace.edit(el));
+                    if (ed && typeof ed.setValue === 'function') {
+                      ed.setValue(cleanCode, 1);
+                      ed.clearSelection();
+                      injected = true;
+                    }
+                  } catch(e) {}
+                });
+                if (injected) return true;
+              }
+            }
+          } catch(e) {}
+
+          // 2. CodeMirror
+          try {
+            if (window.CodeMirror) {
+              const cmList = document.querySelectorAll('.CodeMirror');
+              if (cmList.length > 0) {
+                cmList.forEach(el => {
+                  try {
+                    if (el.CodeMirror && typeof el.CodeMirror.setValue === 'function') {
+                      el.CodeMirror.setValue(cleanCode);
+                      injected = true;
+                    }
+                  } catch(e) {}
+                });
+                if (injected) return true;
+              }
+            }
+          } catch(e) {}
+
+          // 3. Monaco Editor
+          try {
+            if (window.monaco && window.monaco.editor) {
+              const models = window.monaco.editor.getModels();
+              if (models && models.length > 0) {
+                models[0].setValue(cleanCode);
+                return true;
+              }
+            }
+          } catch(e) {}
+
+          // 4. Any active textarea
+          try {
+            const active = document.activeElement;
+            if (active && (active.tagName === 'TEXTAREA' || active.tagName === 'INPUT')) {
+              active.value = cleanCode;
+              active.dispatchEvent(new Event('input', { bubbles: true }));
+              active.dispatchEvent(new Event('change', { bubbles: true }));
+              return true;
+            }
+          } catch(e) {}
+
+          return injected;
+        },
+        args: [code]
+      });
+      return { success: true, results };
+    }
+
+    if (subAction === 'insertChunk') {
+      const results = await chrome.scripting.executeScript({
+        target: { tabId, allFrames: true },
+        world: 'MAIN',
+        func: (textChunk) => {
+          let done = false;
+          try {
+            if (window.ace) {
+              const aceList = document.querySelectorAll('.ace_editor');
+              aceList.forEach(el => {
+                try {
+                  const ed = el.env?.editor || (window.ace.edit && window.ace.edit(el));
+                  if (ed && typeof ed.insert === 'function') {
+                    ed.insert(textChunk);
+                    done = true;
+                  }
+                } catch(e) {}
+              });
+              if (done) return true;
+            }
+          } catch(e) {}
+
+          try {
+            if (window.CodeMirror) {
+              const cmList = document.querySelectorAll('.CodeMirror');
+              cmList.forEach(el => {
+                try {
+                  if (el.CodeMirror && typeof el.CodeMirror.replaceSelection === 'function') {
+                    el.CodeMirror.replaceSelection(textChunk);
+                    done = true;
+                  }
+                } catch(e) {}
+              });
+              if (done) return true;
+            }
+          } catch(e) {}
+
+          return done;
+        },
+        args: [chunk]
+      });
+      return { success: true, results };
+    }
+
+    if (subAction === 'clearEditor') {
+      const results = await chrome.scripting.executeScript({
+        target: { tabId, allFrames: true },
+        world: 'MAIN',
+        func: () => {
+          try {
+            if (window.ace) {
+              document.querySelectorAll('.ace_editor').forEach(el => {
+                try {
+                  const ed = el.env?.editor || (window.ace.edit && window.ace.edit(el));
+                  if (ed) {
+                    ed.setValue('', 1);
+                    ed.setBehavioursEnabled(false);
+                    ed.setOption('behavioursEnabled', false);
+                    ed.setOption('wrapBehavioursEnabled', false);
+                    ed.setOption('enableAutoIndent', false);
+                    ed.setOption('enableBasicAutocompletion', false);
+                    ed.setOption('enableLiveAutocompletion', false);
+                  }
+                } catch(e) {}
+              });
+            }
+          } catch(e) {}
+          try {
+            if (window.CodeMirror) {
+              document.querySelectorAll('.CodeMirror').forEach(el => {
+                try {
+                  if (el.CodeMirror) {
+                    el.CodeMirror.setValue('');
+                    el.CodeMirror.setOption('autoCloseBrackets', false);
+                  }
+                } catch(e) {}
+              });
+            }
+          } catch(e) {}
+          return true;
+        }
+      });
+      return { success: true, results };
+    }
+
+    if (subAction === 'disableAutoPairing') {
+      const results = await chrome.scripting.executeScript({
+        target: { tabId, allFrames: true },
+        world: 'MAIN',
+        func: () => {
+          try {
+            if (window.ace) {
+              document.querySelectorAll('.ace_editor').forEach(el => {
+                try {
+                  const ed = el.env?.editor || (window.ace.edit && window.ace.edit(el));
+                  if (ed) {
+                    ed.setBehavioursEnabled(false);
+                    ed.setOption('behavioursEnabled', false);
+                    ed.setOption('wrapBehavioursEnabled', false);
+                    ed.setOption('enableAutoIndent', false);
+                    ed.setOption('enableBasicAutocompletion', false);
+                    ed.setOption('enableLiveAutocompletion', false);
+                    ed.setOption('enableSnippets', false);
+                  }
+                } catch(e) {}
+              });
+            }
+          } catch(e) {}
+          try {
+            if (window.CodeMirror) {
+              document.querySelectorAll('.CodeMirror').forEach(el => {
+                try {
+                  if (el.CodeMirror) {
+                    el.CodeMirror.setOption('autoCloseBrackets', false);
+                    el.CodeMirror.setOption('matchBrackets', false);
+                  }
+                } catch(e) {}
+              });
+            }
+          } catch(e) {}
+          return true;
+        }
+      });
+      return { success: true, results };
+    }
+
+    if (subAction === 'restoreAutoPairing') {
+      const results = await chrome.scripting.executeScript({
+        target: { tabId, allFrames: true },
+        world: 'MAIN',
+        func: () => {
+          try {
+            if (window.ace) {
+              document.querySelectorAll('.ace_editor').forEach(el => {
+                try {
+                  const ed = el.env?.editor || (window.ace.edit && window.ace.edit(el));
+                  if (ed) {
+                    ed.setBehavioursEnabled(true);
+                    ed.setOption('behavioursEnabled', true);
+                    ed.setOption('enableAutoIndent', true);
+                  }
+                } catch(e) {}
+              });
+            }
+          } catch(e) {}
+          return true;
+        }
+      });
+      return { success: true, results };
+    }
+
+    return { success: false, error: 'Unknown subAction' };
+  } catch (err) {
+    return { success: false, error: err.message };
   }
 }
 
