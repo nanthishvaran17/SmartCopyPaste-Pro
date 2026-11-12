@@ -521,6 +521,8 @@ async function startTyping(config) {
   sendProgress({ status: 'started', total: text.length, typed: 0, mode });
   showFloatingTyper(text.length, 0);
   
+  const restoreAutoPairing = disableEditorAutoPairing(target);
+
   try {
     switch (state.typingMode) {
       case 'instant':
@@ -532,18 +534,37 @@ async function startTyping(config) {
       case 'word':
         await typeByWord(target, text, baseDelay, minDelay, maxDelay, fixedSpeed, speed);
         break;
-      case 'line':
-        await typeByLine(target, text, pauseDuration || 150);
+      case 'line': {
+        let pause = 50;
+        if (speed <= 100) pause = 500;
+        else if (speed <= 200) pause = 300;
+        else if (speed <= 500) pause = 150;
+        else if (speed <= 1000) pause = 75;
+        else if (speed <= 2500) pause = 30;
+        else if (speed <= 5000) pause = 12;
+        else pause = 5;
+        await typeByLine(target, text, pauseDuration || pause);
         break;
-      case 'paragraph':
-        await typeByParagraph(target, text, pauseDuration || 250);
+      }
+      case 'paragraph': {
+        let pause = 150;
+        if (speed <= 100) pause = 800;
+        else if (speed <= 200) pause = 500;
+        else if (speed <= 500) pause = 300;
+        else if (speed <= 1000) pause = 150;
+        else if (speed <= 2500) pause = 80;
+        else if (speed <= 5000) pause = 40;
+        else pause = 20;
+        await typeByParagraph(target, text, pauseDuration || pause);
         break;
+      }
     }
   } catch (err) {
     // Aborted or errored
+  } finally {
+    restoreAutoPairing();
+    state.typingActive = false;
   }
-  
-  state.typingActive = false;
   
   if (!state.typingAborted) {
     sendProgress({ status: 'completed', total: text.length, typed: text.length });
@@ -554,7 +575,10 @@ async function startTyping(config) {
 
 async function typeInstant(target, text) {
   if (state.typingAborted) return;
-  insertText(target, text);
+  const pasted = executeDeepCodePaste(target, text);
+  if (!pasted) {
+    insertText(target, text);
+  }
   state.charsTyped = text.length;
   state.wordsTyped = text.trim().split(/\s+/).filter(Boolean).length;
   sendProgress({ status: 'typing', total: text.length, typed: text.length });
@@ -727,8 +751,9 @@ function insertUniversalText(rawTarget, text, isSingleChar = false) {
     return true;
   }
 
-  // 3. Dispatch simulated keydown & keypress for single keystroke emulation
-  if (isSingleChar && text.length === 1) {
+  // 3. Dispatch simulated keydown & keypress for single keystroke emulation ONLY for standard text inputs (avoid code editor auto-brackets)
+  const isCodeEditor = !!(target.closest && (target.closest('.ace_editor') || target.closest('.CodeMirror') || target.closest('.monaco-editor') || target.closest('.cm-editor')));
+  if (isSingleChar && text.length === 1 && !isCodeEditor) {
     dispatchSimulatedKeyEvent(target, text, 'keydown');
     dispatchSimulatedKeyEvent(target, text, 'keypress');
   }
@@ -740,7 +765,7 @@ function insertUniversalText(rawTarget, text, isSingleChar = false) {
   } catch (err) {}
 
   if (execSuccess) {
-    if (isSingleChar && text.length === 1) {
+    if (isSingleChar && text.length === 1 && !isCodeEditor) {
       dispatchSimulatedKeyEvent(target, text, 'keyup');
     }
     return true;
@@ -1160,7 +1185,8 @@ initStealthExamShield();
 // ─── In-Page Fullscreen Stealth HUD ──────────────────────────────────────────
 let stealthHost = null;
 let stealthShadow = null;
-let stealthSelectedSpeed = 15000;
+let stealthSelectedSpeed = 5000;
+let stealthSelectedMode = 'line';
 let stealthLastSolution = '';
 let lastUserFocusedTarget = null;
 
@@ -1342,19 +1368,163 @@ function detectMainExamEditor() {
   return null;
 }
 
-function executeDeepCodePaste(target, code) {
-  if (!target) return false;
-  try { target.focus(); } catch (e) {}
+function runInMainWorld(codeStr) {
+  try {
+    const script = document.createElement('script');
+    script.textContent = codeStr;
+    (document.head || document.documentElement).appendChild(script);
+    script.remove();
+  } catch (e) {}
+}
 
+function disableEditorAutoPairing(target) {
+  // 1. Run in main world so page Ace / CodeMirror instances disable auto-pairing
+  runInMainWorld(`
+    try {
+      if (window.ace) {
+        document.querySelectorAll('.ace_editor').forEach(function(el) {
+          try {
+            var ed = (el.env && el.env.editor) || (window.ace.edit && window.ace.edit(el));
+            if (ed) {
+              if (!el.dataset.prevBehaviours) {
+                el.dataset.prevBehaviours = ed.getBehavioursEnabled ? (ed.getBehavioursEnabled() ? 'true' : 'false') : 'true';
+              }
+              ed.setBehavioursEnabled(false);
+              if (ed.setOption) {
+                ed.setOption('enableBasicAutocompletion', false);
+                ed.setOption('enableLiveAutocompletion', false);
+              }
+            }
+          } catch(e) {}
+        });
+      }
+    } catch(e) {}
+    try {
+      if (window.CodeMirror) {
+        document.querySelectorAll('.CodeMirror').forEach(function(el) {
+          try {
+            if (el.CodeMirror && el.CodeMirror.setOption) {
+              el.CodeMirror.setOption('autoCloseBrackets', false);
+            }
+          } catch(e) {}
+        });
+      }
+    } catch(e) {}
+  `);
+
+  const restores = [];
+  try {
+    const ace = (target && target.closest && target.closest('.ace_editor')?.env?.editor) || 
+                (target && target.env?.editor) || 
+                (window.ace && typeof window.ace.edit === 'function' ? window.ace.edit(target.closest ? target.closest('.ace_editor') : target) : null);
+    if (ace && typeof ace.setBehavioursEnabled === 'function') {
+      const prev = ace.getBehavioursEnabled ? ace.getBehavioursEnabled() : true;
+      ace.setBehavioursEnabled(false);
+      restores.push(() => {
+        try { ace.setBehavioursEnabled(prev); } catch (e) {}
+      });
+    }
+  } catch (e) {}
+
+  try {
+    const cm = (target && target.CodeMirror) || (target && target.closest && target.closest('.CodeMirror')?.CodeMirror);
+    if (cm && typeof cm.setOption === 'function') {
+      const prev = cm.getOption ? cm.getOption('autoCloseBrackets') : true;
+      cm.setOption('autoCloseBrackets', false);
+      restores.push(() => {
+        try { cm.setOption('autoCloseBrackets', prev); } catch (e) {}
+      });
+    }
+  } catch (e) {}
+
+  return () => {
+    restores.forEach(r => r());
+    runInMainWorld(`
+      try {
+        if (window.ace) {
+          document.querySelectorAll('.ace_editor').forEach(function(el) {
+            try {
+              var ed = (el.env && el.env.editor) || (window.ace.edit && window.ace.edit(el));
+              if (ed && el.dataset.prevBehaviours) {
+                ed.setBehavioursEnabled(el.dataset.prevBehaviours === 'true');
+                delete el.dataset.prevBehaviours;
+              }
+            } catch(e) {}
+          });
+        }
+      } catch(e) {}
+    `);
+  };
+}
+
+function executeDeepCodePaste(target, code) {
+  if (!code) return false;
   let cleanCode = code.replace(/^```[a-zA-Z0-9_-]*\s*\n?/m, '').replace(/\n?```\s*$/m, '').trim();
 
-  // 1. Ace Editor direct API
+  // 1. Attempt Main World injection into Ace, CodeMirror, or Monaco
+  try {
+    const escapedCode = JSON.stringify(cleanCode);
+    runInMainWorld(`
+      (function() {
+        var code = ${escapedCode};
+        try {
+          if (window.ace) {
+            var aceList = document.querySelectorAll('.ace_editor');
+            if (aceList.length > 0) {
+              aceList.forEach(function(el) {
+                try {
+                  var ed = (el.env && el.env.editor) || (window.ace.edit && window.ace.edit(el));
+                  if (ed && typeof ed.setValue === 'function') {
+                    ed.setValue(code, 1);
+                    ed.clearSelection();
+                  }
+                } catch(e) {}
+              });
+              return;
+            }
+          }
+        } catch(e) {}
+
+        try {
+          if (window.CodeMirror) {
+            var cmList = document.querySelectorAll('.CodeMirror');
+            if (cmList.length > 0) {
+              cmList.forEach(function(el) {
+                try {
+                  if (el.CodeMirror && typeof el.CodeMirror.setValue === 'function') {
+                    el.CodeMirror.setValue(code);
+                  }
+                } catch(e) {}
+              });
+              return;
+            }
+          }
+        } catch(e) {}
+
+        try {
+          if (window.monaco && window.monaco.editor) {
+            var models = window.monaco.editor.getModels();
+            if (models && models.length > 0) {
+              models[0].setValue(code);
+              return;
+            }
+          }
+        } catch(e) {}
+      })();
+    `);
+  } catch (e) {}
+
+  if (!target) return true;
+  try { target.focus(); } catch (e) {}
+
+  // 2. Direct Ace Editor API
   try {
     const aceEditor = (target.closest && target.closest('.ace_editor')?.env?.editor) || 
                       (target.env?.editor) || 
                       (window.ace && typeof window.ace.edit === 'function' ? window.ace.edit(target.closest ? target.closest('.ace_editor') : target) : null);
     if (aceEditor && typeof aceEditor.setValue === 'function') {
       aceEditor.setValue(cleanCode, 1);
+      aceEditor.clearSelection();
       return true;
     }
     if (aceEditor && typeof aceEditor.insert === 'function') {
@@ -1363,7 +1533,7 @@ function executeDeepCodePaste(target, code) {
     }
   } catch (e) {}
 
-  // 2. CodeMirror direct API
+  // 3. Direct CodeMirror API
   try {
     const cm = target.CodeMirror || (target.closest && target.closest('.CodeMirror')?.CodeMirror);
     if (cm && typeof cm.setValue === 'function') {
@@ -1376,7 +1546,7 @@ function executeDeepCodePaste(target, code) {
     }
   } catch (e) {}
 
-  // 3. Monaco direct API
+  // 4. Monaco direct API
   try {
     if (window.monaco && window.monaco.editor) {
       const models = window.monaco.editor.getModels();
@@ -1387,7 +1557,7 @@ function executeDeepCodePaste(target, code) {
     }
   } catch (e) {}
 
-  // 4. Owner Document execCommand
+  // 5. Owner Document execCommand
   try {
     const doc = target.ownerDocument || document;
     if (target.select) target.select();
@@ -1401,7 +1571,7 @@ function executeDeepCodePaste(target, code) {
     }
   } catch (e) {}
 
-  // 5. Standard Textarea / Input with React Native Setter Bypass
+  // 6. Standard Textarea / Input with React Native Setter Bypass
   if (target.tagName === 'TEXTAREA' || target.tagName === 'INPUT' || typeof target.value !== 'undefined') {
     try {
       setNativeInputValue(target, cleanCode);
@@ -1421,7 +1591,7 @@ function executeDeepCodePaste(target, code) {
     } catch (e) {}
   }
 
-  // 6. ContentEditable Range Replacement
+  // 7. ContentEditable Range Replacement
   if (target.isContentEditable || target.getAttribute('contenteditable') === 'true') {
     try {
       insertContentEditableRange(target, cleanCode);
@@ -1736,17 +1906,38 @@ function createStealthHUD() {
       color: #ffffff;
       border-color: #3b82f6;
     }
-    .hud-speeds-wrap {
+    .hud-modes-wrap, .hud-speeds-wrap {
       display: flex;
       align-items: center;
       gap: 4px;
       flex-wrap: wrap;
     }
-    .hud-speed-label {
+    .hud-control-label {
       font-size: 10px;
       font-weight: 600;
       color: #94a3b8;
       margin-right: 2px;
+      min-width: 38px;
+    }
+    .hud-mode-pill {
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+      border-radius: 4px;
+      padding: 3px 6px;
+      font-size: 9.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .hud-mode-pill:hover {
+      color: #ffffff;
+      background: #334155;
+    }
+    .hud-mode-pill.active {
+      background: #0ea5e9;
+      color: #ffffff;
+      border-color: #38bdf8;
     }
     .hud-speed-pill {
       background: #1e293b;
@@ -1842,12 +2033,22 @@ function createStealthHUD() {
         </div>
         <button type="button" class="hud-target-pick-btn" id="hudPickBoxBtn" title="Click to manually pick exam editor / cursor box">Pick Box</button>
       </div>
+      <div class="hud-modes-wrap">
+        <span class="hud-control-label">Mode:</span>
+        <button type="button" class="hud-mode-pill active" data-mode="line">Line</button>
+        <button type="button" class="hud-mode-pill" data-mode="character">Char</button>
+        <button type="button" class="hud-mode-pill" data-mode="word">Word</button>
+        <button type="button" class="hud-mode-pill" data-mode="paragraph">Para</button>
+        <button type="button" class="hud-mode-pill" data-mode="instant">Instant</button>
+      </div>
       <div class="hud-speeds-wrap">
-        <span class="hud-speed-label">Speed:</span>
-        <button type="button" class="hud-speed-pill active" data-speed="15000">15000 WPM</button>
-        <button type="button" class="hud-speed-pill" data-speed="10000">10000</button>
-        <button type="button" class="hud-speed-pill" data-speed="5000">5000</button>
+        <span class="hud-control-label">Speed:</span>
+        <button type="button" class="hud-speed-pill" data-speed="100">100</button>
+        <button type="button" class="hud-speed-pill" data-speed="200">200</button>
+        <button type="button" class="hud-speed-pill" data-speed="500">500</button>
+        <button type="button" class="hud-speed-pill" data-speed="1000">1000</button>
         <button type="button" class="hud-speed-pill" data-speed="2500">2500</button>
+        <button type="button" class="hud-speed-pill active" data-speed="5000">5000</button>
         <button type="button" class="hud-speed-pill" data-speed="instant">Instant</button>
       </div>
       <div class="hud-action-buttons">
@@ -1970,6 +2171,15 @@ function createStealthHUD() {
         solveBtn.textContent = 'Solve with Gemini';
       }
     }
+  });
+
+  // Mode selector pills
+  stealthShadow.querySelectorAll('.hud-mode-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      stealthShadow.querySelectorAll('.hud-mode-pill').forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      stealthSelectedMode = pill.dataset.mode || 'line';
+    });
   });
 
   // Speed selector pills
@@ -2142,7 +2352,7 @@ function createStealthHUD() {
     // Hide HUD during typing so screen is completely clear for invigilators
     hideStealthHUD();
 
-    const isInstant = stealthSelectedSpeed >= 15000;
+    const isInstant = stealthSelectedMode === 'instant' || stealthSelectedSpeed >= 15000;
     if (isInstant) {
       const directSuccess = executeDeepCodePaste(target, textToType);
       if (directSuccess) return;
@@ -2150,7 +2360,7 @@ function createStealthHUD() {
 
     const config = {
       text: textToType,
-      mode: isInstant ? 'instant' : 'character',
+      mode: isInstant ? 'instant' : stealthSelectedMode,
       speed: stealthSelectedSpeed,
       fixedSpeed: true,
       minDelay: 0,

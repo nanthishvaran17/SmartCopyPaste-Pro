@@ -2047,6 +2047,8 @@ function initTyping() {
   // Speed Presets
   const presets = {
     normal: { speed: 60, min: 30, max: 120, mode: 'character', tag: 'Normal 60 WPM' },
+    wpm100: { speed: 100, min: 20, max: 60, mode: 'character', tag: '100 WPM' },
+    wpm200: { speed: 200, min: 10, max: 30, mode: 'character', tag: '200 WPM' },
     fast: { speed: 180, min: 10, max: 40, mode: 'character', tag: 'Fast 180 WPM' },
     ultra: { speed: 500, min: 2, max: 10, mode: 'character', tag: 'Ultra 500 WPM' },
     extreme: { speed: 1000, min: 0, max: 3, mode: 'character', tag: 'Extreme 1000 WPM' },
