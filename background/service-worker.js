@@ -56,7 +56,59 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 
   // Setup context menu
   chrome.contextMenus && setupContextMenus();
+
+  // Inject content script into all currently open tabs so user doesn't need to refresh tabs
+  injectContentScriptToAllTabs();
 });
+
+// Auto-inject on browser startup
+if (chrome.runtime.onStartup) {
+  chrome.runtime.onStartup.addListener(() => {
+    injectContentScriptToAllTabs();
+  });
+}
+
+// Automatically ensure content script on any page that completes navigation
+if (chrome.tabs && chrome.tabs.onUpdated) {
+  chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+    if (changeInfo.status === 'complete' && tab && tab.url && !isRestrictedUrl(tab.url)) {
+      chrome.scripting.executeScript({
+        target: { tabId, allFrames: true },
+        files: ['content/content-main.js']
+      }).catch(() => {});
+    }
+  });
+}
+
+function isRestrictedUrl(url) {
+  if (!url) return true;
+  return url.startsWith('chrome://') ||
+    url.startsWith('edge://') ||
+    url.startsWith('about:') ||
+    url.startsWith('chrome-extension://') ||
+    url.startsWith('view-source:') ||
+    url.includes('chrome.google.com/webstore') ||
+    url.includes('chromewebstore.google.com');
+}
+
+async function injectContentScriptToAllTabs() {
+  try {
+    const tabs = await chrome.tabs.query({});
+    for (const tab of tabs) {
+      if (!tab.id || !tab.url || isRestrictedUrl(tab.url)) continue;
+      try {
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id, allFrames: true },
+          files: ['content/content-main.js']
+        });
+      } catch (e) {
+        // Tab might be discarded or sandboxed
+      }
+    }
+  } catch (err) {
+    // Ignore query error
+  }
+}
 
 function setupContextMenus() {
   chrome.contextMenus.removeAll(() => {
@@ -403,6 +455,29 @@ async function sendToContentScript(tabId, payload) {
   try {
     const response = await chrome.tabs.sendMessage(tabId, payload);
     return { success: true, response };
+  } catch (err) {
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId, allFrames: true },
+        files: ['content/content-main.js']
+      });
+      await new Promise(r => setTimeout(r, 80));
+      const response = await chrome.tabs.sendMessage(tabId, payload);
+      return { success: true, response };
+    } catch (retryErr) {
+      return { success: false, error: retryErr.message || err.message };
+    }
+  }
+}
+
+async function ensureContentScript(tabId) {
+  if (!tabId) return { success: false, error: 'No tabId provided' };
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId, allFrames: true },
+      files: ['content/content-main.js']
+    });
+    return { success: true };
   } catch (err) {
     return { success: false, error: err.message };
   }

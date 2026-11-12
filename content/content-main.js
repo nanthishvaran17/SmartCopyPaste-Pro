@@ -1,5 +1,9 @@
 'use strict';
 
+(() => {
+  if (window.__smartPasteLoaded) return;
+  window.__smartPasteLoaded = true;
+
 // ─── State ────────────────────────────────────────────────────────────────────
 const state = {
   typingActive: false,
@@ -1402,3 +1406,5 @@ document.addEventListener('keydown', (e) => {
     return;
   }
 }, true);
+
+})();

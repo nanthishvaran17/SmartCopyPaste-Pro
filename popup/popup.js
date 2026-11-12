@@ -8,8 +8,29 @@ function sendBG(action, data = {}) {
   return chrome.runtime.sendMessage({ action, ...data });
 }
 
-function sendContent(tabId, payload) {
-  return chrome.tabs.sendMessage(tabId, payload);
+async function sendContent(tabId, payload) {
+  try {
+    return await chrome.tabs.sendMessage(tabId, payload);
+  } catch (err) {
+    const errMsg = (err && err.message) ? err.message : String(err);
+    if (errMsg.includes('Receiving end does not exist') || errMsg.includes('Could not establish connection')) {
+      try {
+        await chrome.scripting.executeScript({
+          target: { tabId, allFrames: true },
+          files: ['content/content-main.js']
+        });
+        await new Promise((resolve) => setTimeout(resolve, 90));
+        return await chrome.tabs.sendMessage(tabId, payload);
+      } catch (injectErr) {
+        const iMsg = (injectErr && injectErr.message) ? injectErr.message : '';
+        if (iMsg.includes('chrome://') || iMsg.includes('Cannot access a chrome') || iMsg.includes('webstore')) {
+          throw new Error('Chrome blocks extensions on internal chrome:// pages and Web Store. Open any normal website or test page.');
+        }
+        throw new Error(iMsg || errMsg);
+      }
+    }
+    throw err;
+  }
 }
 
 let toastTimer = null;
