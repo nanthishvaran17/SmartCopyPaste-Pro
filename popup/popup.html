@@ -379,10 +379,19 @@
           </div>
         </div>
 
-        <div class="card" id="recentActivity">
-          <div class="card-header">Recent Activity</div>
+        <div class="card recent-activity-card" id="recentActivity">
+          <div class="card-header recent-activity-header">
+            <div class="recent-title-group">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+              <span>Recent Clips</span>
+            </div>
+            <span class="recent-hint">1-tap to load &amp; type</span>
+          </div>
           <div class="activity-list" id="activityList">
-            <div class="empty-state">No recent activity. Start by capturing some text!</div>
+            <div class="empty-state">No recent activity yet. Text you copy on any webpage will appear here for 1-click typing.</div>
           </div>
         </div>
       </section>
