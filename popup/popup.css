@@ -404,29 +404,10 @@ body::-webkit-scrollbar {
   justify-content: space-between;
 }
 
-/* ─── Apple iOS / macOS Inset Grouped Settings Architecture ────────────────── */
-.settings-section-title {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  color: var(--text-muted);
-  margin: 14px 4px 6px 6px;
-}
-
-.settings-section-title:first-of-type {
-  margin-top: 4px;
-}
-
+/* ─── Settings Groups & Rows (High-End Inset Architecture) ─────────────────── */
 .settings-group {
   display: flex;
   flex-direction: column;
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
-  margin-bottom: 12px;
 }
 
 .setting-row {
@@ -434,23 +415,17 @@ body::-webkit-scrollbar {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 12px 14px;
+  padding: 10px 0;
   border-bottom: 1px solid var(--card-border);
-  transition: background var(--transition);
 }
 
-.setting-row:hover {
-  background: var(--surface-hover);
+.setting-row:first-child {
+  padding-top: 2px;
 }
 
 .setting-row:last-child {
   border-bottom: none;
-}
-
-.setting-row--block {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 12px;
+  padding-bottom: 2px;
 }
 
 .setting-info {
@@ -470,37 +445,6 @@ body::-webkit-scrollbar {
   color: var(--text-muted);
   margin-top: 2px;
   line-height: 1.35;
-}
-
-.settings-save-wrap {
-  margin: 16px 0 14px 0;
-}
-
-.settings-group.app-info .setting-row {
-  padding: 8px 14px;
-  font-size: 11.5px;
-}
-
-.settings-group.app-info .info-label {
-  color: var(--text-muted);
-  font-size: 11px;
-  font-weight: 500;
-}
-
-.settings-group.app-info .info-value {
-  color: var(--text);
-  font-size: 11px;
-  font-weight: 600;
-  font-family: var(--font-mono);
-}
-
-.settings-group.app-info .privacy-note {
-  font-size: 10.5px;
-  color: var(--text-muted);
-  line-height: 1.45;
-  margin: 0;
-  border-top: none;
-  padding: 2px 0;
 }
 
 /* ─── HIDE UNWANTED CLUTTER ON DASHBOARD ───────────────────────────────────── */
@@ -683,16 +627,16 @@ body::-webkit-scrollbar {
 .easy-step--editor-card {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: 20px;
+  border-radius: 22px;
   padding: 12px 14px 10px 14px;
   margin-bottom: 10px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
   transition: all var(--transition);
 }
 
 .easy-step--editor-card:focus-within {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-glow), 0 4px 20px rgba(37, 99, 235, 0.12);
+  box-shadow: 0 0 0 3px var(--primary-glow);
 }
 
 .easy-flow-textarea {
@@ -701,7 +645,7 @@ body::-webkit-scrollbar {
   max-height: 130px;
   font-size: 12.5px;
   font-family: var(--font-mono);
-  resize: none;
+  resize: none !important;
   background: transparent;
   border: none;
   padding: 6px 2px 8px 2px;
@@ -709,6 +653,25 @@ body::-webkit-scrollbar {
   box-sizing: border-box;
   outline: none;
   line-height: 1.5;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
+}
+
+.easy-flow-textarea::-webkit-scrollbar {
+  width: 4px;
+}
+
+.easy-flow-textarea::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.easy-flow-textarea::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: var(--radius-full);
+}
+
+.easy-flow-textarea::-webkit-resizer {
+  display: none !important;
 }
 
 .easy-flow-textarea::placeholder {
@@ -1074,15 +1037,14 @@ body::-webkit-scrollbar {
   transform: scale(0.97);
 }
 
-/* ─── Recent Clips & Quick Dock (Fills the Bottom Workspace) ──────────────── */
+/* ─── Recent Clips & Quick Dock (Zero Box Outline - Floating Capsules) ─────── */
 .recent-activity-card {
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: 20px;
-  padding: 12px 14px;
-  margin-top: 12px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  margin-top: 14px;
   margin-bottom: 6px;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.03);
 }
 
 .recent-activity-header {
@@ -1090,8 +1052,8 @@ body::-webkit-scrollbar {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 8px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--card-border);
+  padding: 0 4px;
+  border-bottom: none;
 }
 
 .recent-title-group {
@@ -1100,7 +1062,7 @@ body::-webkit-scrollbar {
   gap: 6px;
   font-size: 11px;
   font-weight: 700;
-  color: var(--primary);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.6px;
 }
@@ -1111,7 +1073,7 @@ body::-webkit-scrollbar {
   color: var(--text-muted);
   background: var(--surface);
   border: 1px solid var(--card-border);
-  padding: 2px 7px;
+  padding: 2px 8px;
   border-radius: var(--radius-full);
 }
 
@@ -1126,10 +1088,11 @@ body::-webkit-scrollbar {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 7px 10px;
-  background: var(--surface);
+  padding: 8px 14px;
+  background: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-full);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
   cursor: pointer;
   transition: all var(--transition);
 }
@@ -1137,7 +1100,8 @@ body::-webkit-scrollbar {
 .recent-clip-pill:hover {
   background: var(--surface-hover);
   border-color: var(--card-border-hover);
-  transform: translateX(2px);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.08);
 }
 
 .recent-clip-body {
@@ -2422,15 +2386,34 @@ body::-webkit-scrollbar {
 .warning-box {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  padding: 8px 12px;
-  background: rgba(245, 158, 11, 0.08);
-  border: 1px solid rgba(245, 158, 11, 0.2);
+  gap: 10px;
+  padding: 10px 13px;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(217, 119, 6, 0.35);
+  border-left: 3.5px solid #d97706;
   border-radius: var(--radius-sm);
-  color: #f59e0b;
-  font-size: 11px;
-  line-height: 1.4;
-  margin-bottom: 10px;
+  color: #92400e;
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.45;
+  margin-bottom: 12px;
+}
+
+.warning-box svg {
+  color: #d97706;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+[data-theme="dark"] .warning-box {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-left: 3.5px solid #f59e0b;
+  color: #fde68a;
+}
+
+[data-theme="dark"] .warning-box svg {
+  color: #fbbf24;
 }
 
 .scan-hero {
