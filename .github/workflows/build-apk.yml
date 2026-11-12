@@ -23,22 +23,26 @@ jobs:
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Accept Android SDK Licenses
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
-      - name: Prepare Mobile Web Assets
+      - name: Prepare Mobile Web Assets for Capacitor
         run: |
           mkdir -p dist
           cp -r popup dist/
           cp -r options dist/
           cp -r icons dist/
-          cp mobile/index.html dist/index.html || cp popup/popup.html dist/index.html
-          cp mobile/manifest.json dist/manifest.json || cp manifest.json dist/manifest.json
+          cp mobile/index.html dist/index.html
+          cp mobile/manifest.json dist/manifest.json
+          # Fix relative paths for dist root
+          sed -i 's|\.\./popup/|popup/|g' dist/index.html || true
+          sed -i 's|\.\./icons/|icons/|g' dist/manifest.json || true
 
-      - name: Install Capacitor & Initialize Android
+      - name: Setup Capacitor and Initialize Android Project
         run: |
           npm init -y
           npm install @capacitor/core @capacitor/cli @capacitor/android
@@ -46,18 +50,18 @@ jobs:
           npx cap add android
           npx cap sync android
 
-      - name: Build Debug APK
+      - name: Build Debug APK with Gradle
+        working-directory: android
         run: |
-          cd android
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
-      - name: Copy & Rename APK
+      - name: Prepare Build Output Artifact
         run: |
           mkdir -p build-output
           cp android/app/build/outputs/apk/debug/app-debug.apk build-output/SmartPastePro-debug.apk
 
-      - name: Upload APK Artifact
+      - name: Upload SmartPaste Pro APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: SmartPastePro-Android-APK
